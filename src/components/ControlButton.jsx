@@ -17,6 +17,7 @@ export function ControlButton() {
 
     const handleStartConversation = async (conversationName) => {
         await startSession(conversationName);
+        setShowNameInput(false); // Close the modal after starting
     };
 
     const handleClick = () => {

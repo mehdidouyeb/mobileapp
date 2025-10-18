@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
 import styles from './ConversationNameInput.module.css';
 
-export function ConversationNameInput({ onStartConversation, isVisible }) {
+export function ConversationNameInput({ onStartConversation, isVisible, onClose }) {
     const [conversationName, setConversationName] = useState('');
-    const [showInput, setShowInput] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (conversationName.trim()) {
             onStartConversation(conversationName.trim());
             setConversationName('');
-            setShowInput(false);
+            onClose(); // Close the modal
         }
     };
 
-    const handleQuickStart = () => {
-        const timestamp = new Date().toLocaleString();
-        onStartConversation(`Conversation ${timestamp}`);
-        setShowInput(false);
-    };
 
     if (!isVisible) return null;
 
@@ -27,7 +21,7 @@ export function ConversationNameInput({ onStartConversation, isVisible }) {
             <div className={styles.modal}>
                 <h2>🎤 Start New Conversation</h2>
                 <p>Give your conversation a name to easily identify it later:</p>
-                
+
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <input
                         type="text"
@@ -38,7 +32,7 @@ export function ConversationNameInput({ onStartConversation, isVisible }) {
                         autoFocus
                         maxLength={50}
                     />
-                    
+
                     <div className={styles.buttons}>
                         <button 
                             type="submit" 
@@ -50,15 +44,7 @@ export function ConversationNameInput({ onStartConversation, isVisible }) {
                         
                         <button 
                             type="button" 
-                            onClick={handleQuickStart}
-                            className={styles.quickStartButton}
-                        >
-                            Quick Start (with timestamp)
-                        </button>
-                        
-                        <button 
-                            type="button" 
-                            onClick={() => setShowInput(false)}
+                            onClick={onClose}
                             className={styles.cancelButton}
                         >
                             Cancel

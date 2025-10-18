@@ -74,12 +74,12 @@ export class DiscussionStorage {
                 })
                 .select()
                 .single();
-            
+
             if (error) {
                 console.error('Error creating discussion:', error);
                 return null;
             }
-            
+
             this.currentDiscussion = data;
             return data;
         } catch (error) {

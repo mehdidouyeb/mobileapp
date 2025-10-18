@@ -1,0 +1,69 @@
+/**
+ * Message Component Styles
+ */
+
+.message {
+    margin: 10px 0;
+    padding: 10px 15px;
+    border-radius: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+    animation: slideIn 0.3s ease-out;
+}
+
+.userMessage {
+    background: #4CAF50;
+    margin-left: auto;
+    text-align: right;
+}
+
+.aiMessage {
+    background: #2196F3;
+    margin-right: auto;
+}
+
+.liveMessage {
+    opacity: 0.8;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.messageContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.messageContent p {
+    margin: 0;
+    color: white;
+}
+
+.typingIndicator {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9em;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

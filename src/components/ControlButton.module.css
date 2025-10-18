@@ -1,0 +1,65 @@
+/**
+ * Control Button Component Styles
+ */
+
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.controlButton {
+    background: #FF5722;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.controlButton:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+}
+
+.controlButton:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.startButton {
+    background: #4CAF50;
+}
+
+.startButton:hover:not(:disabled) {
+    background: #45a049;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.stopButton {
+    background: #f44336;
+}
+
+.stopButton:hover:not(:disabled) {
+    background: #da190b;
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+}
+
+.resetButton {
+    background: #2196F3;
+    font-size: 14px;
+    padding: 10px 20px;
+    min-width: 80px;
+}
+
+.resetButton:hover:not(:disabled) {
+    background: #1976D2;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}

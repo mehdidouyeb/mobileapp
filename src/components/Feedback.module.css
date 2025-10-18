@@ -1,0 +1,217 @@
+/* Feedback Component Styles */
+
+.feedbackButton {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.feedbackButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.feedbackButton:active {
+    transform: translateY(0);
+}
+
+.feedbackModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.feedbackContent {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feedbackContent h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 20px;
+    text-align: center;
+}
+
+.ratingSection {
+    margin-bottom: 20px;
+}
+
+.ratingSection label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #555;
+}
+
+.starRating {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.star {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.star:hover {
+    transform: scale(1.1);
+}
+
+.star.active {
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
+}
+
+.star:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.ratingText {
+    text-align: center;
+    font-weight: 600;
+    color: #666;
+    font-size: 14px;
+}
+
+.notesSection {
+    margin-bottom: 24px;
+}
+
+.notesSection label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.notesInput {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.notesInput:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.notesInput:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.submitButton {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.submitButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.submitButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.cancelButton {
+    background: #f5f5f5;
+    color: #666;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background: #e0e0e0;
+    border-color: #ccc;
+}
+
+.cancelButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.successMessage {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #4caf50;
+    padding: 20px;
+}

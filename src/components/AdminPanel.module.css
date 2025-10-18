@@ -1,0 +1,295 @@
+/* Admin Panel Component Styles */
+
+.adminButton {
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.adminButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+}
+
+.adminModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.adminContent {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.adminHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.adminHeader h2 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.closeButton:hover {
+    background-color: #f0f0f0;
+}
+
+.adminActions {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.exportButton,
+.clearButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.exportButton {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+}
+
+.exportButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.clearButton {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.clearButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.exportButton:disabled,
+.clearButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.adminBody {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.discussionsList {
+    width: 300px;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.discussionsList h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.noDiscussions {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.discussionsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.discussionItem {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.discussionItem:hover {
+    background-color: #f8f9fa;
+    border-color: #4a90e2;
+}
+
+.discussionItem.selected {
+    background-color: #e3f2fd;
+    border-color: #4a90e2;
+}
+
+.discussionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.discussionDate {
+    font-size: 12px;
+    color: #666;
+}
+
+.discussionRating {
+    font-size: 12px;
+    color: #ff9800;
+}
+
+.discussionPreview {
+    font-size: 14px;
+    color: #555;
+}
+
+.discussionDetails {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.discussionDetails h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.discussionInfo {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.discussionInfo p {
+    margin: 4px 0;
+    color: #555;
+}
+
+.feedbackInfo {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.messagesContainer h4 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.messagesList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.messageItem {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.userMessage {
+    background: #e3f2fd;
+    border-color: #4a90e2;
+}
+
+.aiMessage {
+    background: #f3e5f5;
+    border-color: #9c27b0;
+}
+
+.messageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.messageSender {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.messageTime {
+    font-size: 12px;
+    color: #666;
+}
+
+.messageText {
+    color: #555;
+    line-height: 1.4;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .adminContent {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .adminBody {
+        flex-direction: column;
+    }
+
+    .discussionsList {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        max-height: 200px;
+    }
+
+    .adminActions {
+        flex-direction: column;
+    }
+}

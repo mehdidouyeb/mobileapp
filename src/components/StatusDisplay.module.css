@@ -1,0 +1,58 @@
+/**
+ * Status Display Component Styles
+ */
+
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+}
+
+.icon {
+    font-size: 18px;
+}
+
+.text {
+    color: white;
+}
+
+.idle {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.connecting {
+    background: rgba(255, 193, 7, 0.2);
+    color: #FFC107;
+    animation: pulse 2s infinite;
+}
+
+.listening {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    animation: pulse 1.5s infinite;
+}
+
+.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}

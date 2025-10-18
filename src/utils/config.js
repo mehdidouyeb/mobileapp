@@ -10,20 +10,6 @@ export const CONFIG = {
     API_KEY: import.meta.env.VITE_GEMINI_API_KEY,
     MODEL: 'gemini-2.5-flash-native-audio-preview-09-2025',
 
-    // Debug: Log API key source (remove in production)
-    DEBUG_API_SOURCE: (() => {
-        const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-        console.log('🔍 API Key Debug Info:');
-        console.log('- Environment variable exists:', !!envKey);
-        console.log('- Environment variable length:', envKey ? envKey.length : 0);
-        console.log('- First 10 chars:', envKey ? envKey.substring(0, 10) + '...' : 'undefined');
-        return {
-            hasEnvVar: !!envKey,
-            keyLength: envKey ? envKey.length : 0,
-            source: envKey ? 'environment' : 'undefined'
-        };
-    })(),
-
     // Audio Settings
     AUDIO: {
         INPUT_SAMPLE_RATE: 16000,    // 16kHz for microphone input

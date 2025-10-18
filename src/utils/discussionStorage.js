@@ -1,10 +1,10 @@
 /**
  * Discussion Storage Utility
  * 
- * Handles saving and loading discussion history with feedback
+ * Handles saving and loading discussion history with feedback using Supabase
  */
 
-const DISCUSSIONS_FILE = 'discussions.json';
+import { supabase } from './supabase.js';
 
 /**
  * Discussion data structure
@@ -57,118 +57,214 @@ export class Discussion {
 export class DiscussionStorage {
     constructor() {
         this.currentDiscussion = null;
-        this.discussions = this.loadDiscussions();
     }
 
     /**
      * Start a new discussion
      */
-    startNewDiscussion() {
-        this.currentDiscussion = new Discussion();
-        return this.currentDiscussion;
+    async startNewDiscussion() {
+        try {
+            const { data, error } = await supabase
+                .from('discussions')
+                .insert({
+                    user_id: 'anonymous',
+                    start_time: new Date().toISOString(),
+                    messages: []
+                })
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('Error creating discussion:', error);
+                return null;
+            }
+            
+            this.currentDiscussion = data;
+            return data;
+        } catch (error) {
+            console.error('Error creating discussion:', error);
+            return null;
+        }
     }
 
     /**
      * Add a message to the current discussion
      */
-    addMessage(text, isUser) {
-        if (this.currentDiscussion) {
-            this.currentDiscussion.addMessage(text, isUser);
+    async addMessage(text, isUser) {
+        if (!this.currentDiscussion) return;
+        
+        try {
+            const newMessage = {
+                text,
+                isUser,
+                timestamp: new Date().toISOString()
+            };
+            
+            const updatedMessages = [...this.currentDiscussion.messages, newMessage];
+            
+            const { error } = await supabase
+                .from('discussions')
+                .update({ messages: updatedMessages })
+                .eq('id', this.currentDiscussion.id);
+            
+            if (error) {
+                console.error('Error adding message:', error);
+            } else {
+                this.currentDiscussion.messages = updatedMessages;
+            }
+        } catch (error) {
+            console.error('Error adding message:', error);
         }
     }
 
     /**
      * End the current discussion
      */
-    endCurrentDiscussion() {
-        if (this.currentDiscussion) {
-            this.currentDiscussion.endDiscussion();
-            this.discussions.push(this.currentDiscussion);
-            this.saveDiscussions();
+    async endCurrentDiscussion() {
+        if (!this.currentDiscussion) return null;
+        
+        try {
+            const { error } = await supabase
+                .from('discussions')
+                .update({ end_time: new Date().toISOString() })
+                .eq('id', this.currentDiscussion.id);
+            
+            if (error) {
+                console.error('Error ending discussion:', error);
+            }
+            
             const endedDiscussion = this.currentDiscussion;
             this.currentDiscussion = null;
             return endedDiscussion;
+        } catch (error) {
+            console.error('Error ending discussion:', error);
+            return null;
         }
-        return null;
     }
 
     /**
      * Add feedback to the current discussion
      */
-    addFeedbackToCurrent(rating, notes = '') {
-        if (this.currentDiscussion) {
-            this.currentDiscussion.addFeedback(rating, notes);
-            this.saveDiscussions();
+    async addFeedbackToCurrent(rating, notes = '') {
+        if (!this.currentDiscussion) return false;
+        
+        try {
+            const feedback = {
+                rating,
+                notes,
+                timestamp: new Date().toISOString()
+            };
+            
+            const { error } = await supabase
+                .from('discussions')
+                .update({ 
+                    feedback,
+                    end_time: new Date().toISOString()
+                })
+                .eq('id', this.currentDiscussion.id);
+            
+            if (error) {
+                console.error('Error adding feedback:', error);
+                return false;
+            }
+            
+            this.currentDiscussion.feedback = feedback;
             return true;
+        } catch (error) {
+            console.error('Error adding feedback:', error);
+            return false;
         }
-        return false;
     }
 
     /**
      * Get the latest discussion for feedback
      */
-    getLatestDiscussion() {
-        return this.discussions.length > 0 ? this.discussions[this.discussions.length - 1] : null;
+    async getLatestDiscussion() {
+        try {
+            const { data, error } = await supabase
+                .from('discussions')
+                .select('*')
+                .order('start_time', { ascending: false })
+                .limit(1)
+                .single();
+            
+            if (error) {
+                console.error('Error fetching latest discussion:', error);
+                return null;
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Error fetching latest discussion:', error);
+            return null;
+        }
     }
 
     /**
      * Get all discussions
      */
-    getAllDiscussions() {
-        return this.discussions;
-    }
-
-    /**
-     * Load discussions from localStorage
-     */
-    loadDiscussions() {
+    async getAllDiscussions() {
         try {
-            const stored = localStorage.getItem(DISCUSSIONS_FILE);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                return parsed.map(disc => Object.assign(new Discussion(), disc));
+            const { data, error } = await supabase
+                .from('discussions')
+                .select('*')
+                .order('start_time', { ascending: false });
+            
+            if (error) {
+                console.error('Error fetching discussions:', error);
+                return [];
             }
+            
+            return data || [];
         } catch (error) {
-            console.error('Error loading discussions:', error);
-        }
-        return [];
-    }
-
-    /**
-     * Save discussions to localStorage
-     */
-    saveDiscussions() {
-        try {
-            localStorage.setItem(DISCUSSIONS_FILE, JSON.stringify(this.discussions, null, 2));
-        } catch (error) {
-            console.error('Error saving discussions:', error);
+            console.error('Error fetching discussions:', error);
+            return [];
         }
     }
 
     /**
      * Export discussions as downloadable JSON file
      */
-    exportDiscussions() {
-        const dataStr = JSON.stringify(this.discussions, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
+    async exportDiscussions() {
+        try {
+            const discussions = await this.getAllDiscussions();
+            const dataStr = JSON.stringify(discussions, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `discussions_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `discussions_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting discussions:', error);
+        }
     }
 
     /**
      * Clear all discussions
      */
-    clearAllDiscussions() {
-        this.discussions = [];
-        this.currentDiscussion = null;
-        localStorage.removeItem(DISCUSSIONS_FILE);
+    async clearAllDiscussions() {
+        try {
+            const { error } = await supabase
+                .from('discussions')
+                .delete()
+                .neq('id', 0); // Delete all rows
+            
+            if (error) {
+                console.error('Error clearing discussions:', error);
+                return false;
+            }
+            
+            this.currentDiscussion = null;
+            return true;
+        } catch (error) {
+            console.error('Error clearing discussions:', error);
+            return false;
+        }
     }
 }
 

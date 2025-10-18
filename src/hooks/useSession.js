@@ -70,7 +70,7 @@ export function useSession() {
       aiTurnActiveRef.current = true;
 
       // Save user message to discussion
-      discussionStorage.addMessage(accumulatedUserTextRef.current.trim(), true);
+      await discussionStorage.addMessage(accumulatedUserTextRef.current.trim(), true);
 
       finalizeUserMessage();
       accumulatedUserTextRef.current = '';
@@ -92,7 +92,7 @@ export function useSession() {
       console.log('Turn complete - finalizing AI message');
       if (accumulatedAITextRef.current.trim()) {
         // Save AI message to discussion
-        discussionStorage.addMessage(accumulatedAITextRef.current.trim(), false);
+        await discussionStorage.addMessage(accumulatedAITextRef.current.trim(), false);
 
         finalizeAIMessage();
         accumulatedAITextRef.current = '';
@@ -159,7 +159,7 @@ export function useSession() {
       clearError();
 
       // Start a new discussion
-      discussionStorage.startNewDiscussion();
+      await discussionStorage.startNewDiscussion();
 
       // Start microphone capture
       const micSuccess = await startMicrophoneCapture();
@@ -181,7 +181,7 @@ export function useSession() {
   /**
    * Stops the current session and cleans up resources
    */
-  const stopSession = useCallback(() => {
+  const stopSession = useCallback(async () => {
     setActive(false);
     setStatus('idle');
 
@@ -192,7 +192,7 @@ export function useSession() {
     cleanupAudio();
 
     // End the current discussion
-    discussionStorage.endCurrentDiscussion();
+    await discussionStorage.endCurrentDiscussion();
 
     // Reset transcription state
     updateUserText('');

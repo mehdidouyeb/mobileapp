@@ -150,16 +150,16 @@ export function useSession() {
   playAudioResponseRef.current = playAudioResponse;
 
   /**
-   * Starts a new voice chat session
+   * Starts a new voice chat session with conversation name
    */
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (conversationName = 'Unnamed Conversation') => {
     try {
       setStatus('connecting');
       setActive(true);
       clearError();
 
-      // Start a new discussion
-      await discussionStorage.startNewDiscussion();
+      // Start a new discussion with conversation name
+      await discussionStorage.startNewDiscussion(conversationName);
 
       // Start microphone capture
       const micSuccess = await startMicrophoneCapture();

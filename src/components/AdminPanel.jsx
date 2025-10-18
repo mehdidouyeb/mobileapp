@@ -19,19 +19,19 @@ export function AdminPanel() {
         }
     }, [isOpen]);
 
-    const loadDiscussions = () => {
-        const allDiscussions = discussionStorage.getAllDiscussions();
+    const loadDiscussions = async () => {
+        const allDiscussions = await discussionStorage.getAllDiscussions();
         setDiscussions(allDiscussions);
     };
 
-    const handleExport = () => {
-        discussionStorage.exportDiscussions();
+    const handleExport = async () => {
+        await discussionStorage.exportDiscussions();
     };
 
-    const handleClearAll = () => {
+    const handleClearAll = async () => {
         if (window.confirm('Are you sure you want to clear all discussions? This cannot be undone.')) {
-            discussionStorage.clearAllDiscussions();
-            loadDiscussions();
+            await discussionStorage.clearAllDiscussions();
+            await loadDiscussions();
             setSelectedDiscussion(null);
         }
     };
@@ -101,15 +101,20 @@ export function AdminPanel() {
                                         onClick={() => setSelectedDiscussion(discussion)}
                                     >
                                         <div className={styles.discussionHeader}>
-                                            <span className={styles.discussionDate}>
-                                                {formatDate(discussion.startTime)}
+                                            <span className={styles.discussionName}>
+                                                {discussion.conversation_name || 'Unnamed Conversation'}
                                             </span>
                                             <span className={styles.discussionRating}>
                                                 {getRatingStars(discussion.feedback?.rating)}
                                             </span>
                                         </div>
                                         <div className={styles.discussionPreview}>
-                                            {discussion.messages.length} messages
+                                            <span className={styles.discussionDate}>
+                                                {formatDate(discussion.start_time)}
+                                            </span>
+                                            <span className={styles.messageCount}>
+                                                {discussion.messages.length} messages
+                                            </span>
                                         </div>
                                     </div>
                                 ))}
@@ -121,8 +126,9 @@ export function AdminPanel() {
                         <div className={styles.discussionDetails}>
                             <h3>Discussion Details</h3>
                             <div className={styles.discussionInfo}>
-                                <p><strong>Started:</strong> {formatDate(selectedDiscussion.startTime)}</p>
-                                <p><strong>Ended:</strong> {selectedDiscussion.endTime ? formatDate(selectedDiscussion.endTime) : 'Ongoing'}</p>
+                                <p><strong>Conversation:</strong> {selectedDiscussion.conversation_name || 'Unnamed Conversation'}</p>
+                                <p><strong>Started:</strong> {formatDate(selectedDiscussion.start_time)}</p>
+                                <p><strong>Ended:</strong> {selectedDiscussion.end_time ? formatDate(selectedDiscussion.end_time) : 'Ongoing'}</p>
                                 <p><strong>Messages:</strong> {selectedDiscussion.messages.length}</p>
                                 {selectedDiscussion.feedback && (
                                     <div className={styles.feedbackInfo}>

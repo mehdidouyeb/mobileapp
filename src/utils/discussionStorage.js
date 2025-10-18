@@ -60,14 +60,15 @@ export class DiscussionStorage {
     }
 
     /**
-     * Start a new discussion
+     * Start a new discussion with conversation name
      */
-    async startNewDiscussion() {
+    async startNewDiscussion(conversationName = 'Unnamed Conversation') {
         try {
             const { data, error } = await supabase
                 .from('discussions')
                 .insert({
                     user_id: 'anonymous',
+                    conversation_name: conversationName,
                     start_time: new Date().toISOString(),
                     messages: []
                 })
@@ -92,21 +93,21 @@ export class DiscussionStorage {
      */
     async addMessage(text, isUser) {
         if (!this.currentDiscussion) return;
-        
+
         try {
             const newMessage = {
                 text,
                 isUser,
                 timestamp: new Date().toISOString()
             };
-            
+
             const updatedMessages = [...this.currentDiscussion.messages, newMessage];
-            
+
             const { error } = await supabase
                 .from('discussions')
                 .update({ messages: updatedMessages })
                 .eq('id', this.currentDiscussion.id);
-            
+
             if (error) {
                 console.error('Error adding message:', error);
             } else {
@@ -122,17 +123,17 @@ export class DiscussionStorage {
      */
     async endCurrentDiscussion() {
         if (!this.currentDiscussion) return null;
-        
+
         try {
             const { error } = await supabase
                 .from('discussions')
                 .update({ end_time: new Date().toISOString() })
                 .eq('id', this.currentDiscussion.id);
-            
+
             if (error) {
                 console.error('Error ending discussion:', error);
             }
-            
+
             const endedDiscussion = this.currentDiscussion;
             this.currentDiscussion = null;
             return endedDiscussion;
@@ -147,27 +148,27 @@ export class DiscussionStorage {
      */
     async addFeedbackToCurrent(rating, notes = '') {
         if (!this.currentDiscussion) return false;
-        
+
         try {
             const feedback = {
                 rating,
                 notes,
                 timestamp: new Date().toISOString()
             };
-            
+
             const { error } = await supabase
                 .from('discussions')
-                .update({ 
+                .update({
                     feedback,
                     end_time: new Date().toISOString()
                 })
                 .eq('id', this.currentDiscussion.id);
-            
+
             if (error) {
                 console.error('Error adding feedback:', error);
                 return false;
             }
-            
+
             this.currentDiscussion.feedback = feedback;
             return true;
         } catch (error) {
@@ -187,12 +188,12 @@ export class DiscussionStorage {
                 .order('start_time', { ascending: false })
                 .limit(1)
                 .single();
-            
+
             if (error) {
                 console.error('Error fetching latest discussion:', error);
                 return null;
             }
-            
+
             return data;
         } catch (error) {
             console.error('Error fetching latest discussion:', error);
@@ -209,12 +210,12 @@ export class DiscussionStorage {
                 .from('discussions')
                 .select('*')
                 .order('start_time', { ascending: false });
-            
+
             if (error) {
                 console.error('Error fetching discussions:', error);
                 return [];
             }
-            
+
             return data || [];
         } catch (error) {
             console.error('Error fetching discussions:', error);
@@ -253,12 +254,12 @@ export class DiscussionStorage {
                 .from('discussions')
                 .delete()
                 .neq('id', 0); // Delete all rows
-            
+
             if (error) {
                 console.error('Error clearing discussions:', error);
                 return false;
             }
-            
+
             this.currentDiscussion = null;
             return true;
         } catch (error) {

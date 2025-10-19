@@ -1,21 +1,42 @@
-/* Feedback Component Styles */
+/**
+ * Feedback Component Styles - Enhanced Design
+ */
 
 .feedbackButton {
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    background: linear-gradient(135deg, var(--warning-color) 0%, #ffb300 100%);
     border: none;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 14px;
+    border-radius: var(--radius-full);
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #333;
+    color: var(--black);
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-md);
+    font-family: var(--font-family-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.feedbackButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left var(--transition-slow);
+}
+
+.feedbackButton:hover::before {
+    left: 100%;
 }
 
 .feedbackButton:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.1);
 }
 
 .feedbackButton:active {
@@ -28,179 +49,250 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
 }
 
 .feedbackContent {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 400px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-2xl);
+    max-width: 450px;
     width: 90%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.3s ease;
+    box-shadow: var(--shadow-2xl);
+    border: 1px solid var(--glass-border);
+    animation: slideInUp 0.4s ease-out;
+    position: relative;
+    overflow: hidden;
 }
 
-@keyframes slideUp {
+.feedbackContent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--warning-color), var(--accent-color), var(--info-color));
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+@keyframes slideInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px) scale(0.95);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 .feedbackContent h3 {
-    margin: 0 0 20px 0;
-    color: #333;
-    font-size: 20px;
+    margin: 0 0 var(--space-xl) 0;
+    color: var(--white);
+    font-size: 1.5rem;
     text-align: center;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, var(--white) 0%, rgba(255, 255, 255, 0.8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .ratingSection {
-    margin-bottom: 20px;
+    margin-bottom: var(--space-xl);
 }
 
 .ratingSection label {
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-md);
     font-weight: 600;
-    color: #555;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
 }
 
 .starRating {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
 }
 
 .star {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 2rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 4px;
-    border-radius: 4px;
+    transition: all var(--transition-normal);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    filter: grayscale(1) brightness(0.7);
 }
 
 .star:hover {
-    transform: scale(1.1);
+    transform: scale(1.2);
+    filter: grayscale(0) brightness(1.2);
 }
 
 .star.active {
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
+    filter: grayscale(0) brightness(1.2);
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
 }
 
 .star:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .ratingText {
     text-align: center;
     font-weight: 600;
-    color: #666;
-    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    min-height: 1.2rem;
 }
 
 .notesSection {
-    margin-bottom: 24px;
+    margin-bottom: var(--space-xl);
 }
 
 .notesSection label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-sm);
     font-weight: 600;
-    color: #555;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
 }
 
 .notesInput {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 14px;
+    padding: var(--space-md);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-family-primary);
+    font-size: 0.95rem;
     resize: vertical;
-    transition: border-color 0.3s ease;
+    transition: all var(--transition-normal);
     box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .notesInput:focus {
     outline: none;
-    border-color: #4a90e2;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2), var(--shadow-lg);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.notesInput::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .notesInput:disabled {
-    background-color: #f5f5f5;
+    background-color: rgba(255, 255, 255, 0.05);
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .buttonGroup {
     display: flex;
-    gap: 12px;
+    gap: var(--space-md);
     justify-content: center;
 }
 
 .submitButton {
-    background: linear-gradient(135deg, #4a90e2, #357abd);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+    color: var(--white);
     border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal);
     flex: 1;
+    font-family: var(--font-family-primary);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.submitButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--transition-slow);
+}
+
+.submitButton:hover:not(:disabled)::before {
+    left: 100%;
 }
 
 .submitButton:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.1);
 }
 
 .submitButton:disabled {
-    background: #ccc;
+    background: linear-gradient(135deg, var(--gray-500) 0%, var(--gray-600) 100%);
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--shadow-sm);
+    opacity: 0.7;
+}
+
+.submitButton:disabled::before {
+    display: none;
 }
 
 .cancelButton {
-    background: #f5f5f5;
-    color: #666;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 24px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal);
     flex: 1;
+    font-family: var(--font-family-primary);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .cancelButton:hover:not(:disabled) {
-    background: #e0e0e0;
-    border-color: #ccc;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--white);
+    transform: translateY(-1px);
 }
 
 .cancelButton:disabled {
@@ -210,8 +302,87 @@
 
 .successMessage {
     text-align: center;
-    font-size: 18px;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: #4caf50;
-    padding: 20px;
+    color: var(--accent-color);
+    padding: var(--space-xl);
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    animation: pulse 2s infinite;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+    .feedbackContent {
+        padding: var(--space-xl);
+        margin: var(--space-lg);
+        border-radius: var(--radius-xl);
+    }
+
+    .feedbackContent h3 {
+        font-size: 1.25rem;
+    }
+
+    .star {
+        font-size: 1.75rem;
+    }
+
+    .notesInput {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .buttonGroup {
+        flex-direction: column;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .feedbackContent {
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid var(--white);
+    }
+    
+    .notesInput {
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid var(--white);
+        color: var(--white);
+    }
+    
+    .submitButton {
+        background: var(--accent-color);
+        border: 2px solid var(--white);
+    }
+    
+    .cancelButton {
+        border: 2px solid var(--white);
+        color: var(--white);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .feedbackModal {
+        animation: none;
+    }
+    
+    .feedbackContent {
+        animation: none;
+    }
+    
+    .submitButton::before {
+        display: none;
+    }
+    
+    .submitButton:hover:not(:disabled),
+    .cancelButton:hover,
+    .notesInput:focus,
+    .star:hover {
+        transform: none;
+    }
+    
+    .successMessage {
+        animation: none;
+    }
 }

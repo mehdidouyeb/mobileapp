@@ -98,7 +98,7 @@ IMPORTANT: Base all analysis on actual conversation content. Be specific with ex
 
 export const CONFIG = {
     // API Configuration
-    API_KEY: import.meta.env.VITE_GEMINI_API_KEY || 'demo_key',
+    API_KEY: import.meta.env.VITE_GEMINI_API_KEY || 'MISSING_API_KEY',
     MODEL: 'gemini-2.5-flash-native-audio-preview-09-2025',
 
     // Audio Settings

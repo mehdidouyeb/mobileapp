@@ -7,7 +7,7 @@
 
 export const CONFIG = {
     // API Configuration
-    API_KEY: import.meta.env.VITE_GEMINI_API_KEY,
+    API_KEY: import.meta.env.VITE_GEMINI_API_KEY || 'MISSING_API_KEY',
     MODEL: 'gemini-2.5-flash-native-audio-preview-09-2025',
 
     // Audio Settings

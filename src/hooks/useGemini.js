@@ -20,6 +20,11 @@ export function useGemini(onMessage, onError, onClose, onOpen) {
      */
     const connect = useCallback(async () => {
         try {
+            // Check if API key is configured
+            if (!CONFIG.API_KEY || CONFIG.API_KEY === 'MISSING_API_KEY') {
+                throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in your .env file.');
+            }
+
             // Initialize Gemini AI client
             clientRef.current = new GoogleGenAI({ apiKey: CONFIG.API_KEY });
 

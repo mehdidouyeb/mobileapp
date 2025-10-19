@@ -9,7 +9,6 @@ import { ChatArea } from './ChatArea.jsx';
 import { ControlButton } from './ControlButton.jsx';
 import { StatusDisplay } from './StatusDisplay.jsx';
 import { Feedback } from './Feedback.jsx';
-import { AdminPanel } from './AdminPanel.jsx';
 import styles from './VoiceChat.module.css';
 
 export function VoiceChat() {
@@ -26,7 +25,6 @@ export function VoiceChat() {
                     <ControlButton />
                     <StatusDisplay />
                     <Feedback />
-                    <AdminPanel />
                 </div>
             </main>
         </div>

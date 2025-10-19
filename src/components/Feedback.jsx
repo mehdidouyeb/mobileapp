@@ -25,7 +25,7 @@ export function Feedback() {
 
         try {
             // Add feedback to the latest discussion
-            const success = discussionStorage.addFeedbackToCurrent(rating, notes);
+            const success = await discussionStorage.addFeedbackToCurrent(rating, notes);
 
             if (success) {
                 setSubmitted(true);

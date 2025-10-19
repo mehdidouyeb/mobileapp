@@ -16,7 +16,7 @@ export function VoiceChat() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>🎤 Gemini Voice Chat</h1>
+                <h1 className={styles.title}>AI Coach</h1>
             </header>
 
             <main className={styles.main}>

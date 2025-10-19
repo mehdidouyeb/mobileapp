@@ -34,16 +34,16 @@ export function ConversationNameInput({ onStartConversation, isVisible, onClose 
                     />
 
                     <div className={styles.buttons}>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className={styles.startButton}
                             disabled={!conversationName.trim()}
                         >
                             Start Conversation
                         </button>
-                        
-                        <button 
-                            type="button" 
+
+                        <button
+                            type="button"
                             onClick={onClose}
                             className={styles.cancelButton}
                         >

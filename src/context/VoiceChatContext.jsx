@@ -18,6 +18,16 @@ const initialState = {
     currentUserText: '',
     currentAIText: '',
 
+    // Language settings
+    languages: {
+        native: null,
+        target: null,
+        level: null
+    },
+
+    // Text input mode
+    textInputMode: false,
+
     // Error handling
     error: null,
 };
@@ -34,6 +44,10 @@ const ActionTypes = {
     SET_ERROR: 'SET_ERROR',
     CLEAR_ERROR: 'CLEAR_ERROR',
     RESET_SESSION: 'RESET_SESSION',
+    CLEAR_MESSAGES: 'CLEAR_MESSAGES',
+    SET_LANGUAGES: 'SET_LANGUAGES',
+    SEND_TEXT_MESSAGE: 'SEND_TEXT_MESSAGE',
+    SET_TEXT_INPUT_MODE: 'SET_TEXT_INPUT_MODE'
 };
 
 // Reducer function
@@ -99,6 +113,30 @@ function voiceChatReducer(state, action) {
                 messages: state.messages, // Keep message history
             };
 
+        case ActionTypes.CLEAR_MESSAGES:
+            return {
+                ...state,
+                messages: []
+            };
+
+        case ActionTypes.SET_LANGUAGES:
+            return {
+                ...state,
+                languages: action.payload
+            };
+
+        case ActionTypes.SEND_TEXT_MESSAGE:
+            return {
+                ...state,
+                messages: [...state.messages, action.payload]
+            };
+
+        case ActionTypes.SET_TEXT_INPUT_MODE:
+            return {
+                ...state,
+                textInputMode: action.payload
+            };
+
         default:
             return state;
     }
@@ -123,6 +161,10 @@ export function VoiceChatProvider({ children }) {
         setError: (error) => dispatch({ type: ActionTypes.SET_ERROR, payload: error }),
         clearError: () => dispatch({ type: ActionTypes.CLEAR_ERROR }),
         resetSession: () => dispatch({ type: ActionTypes.RESET_SESSION }),
+        clearMessages: () => dispatch({ type: ActionTypes.CLEAR_MESSAGES }),
+        setLanguages: (languages) => dispatch({ type: ActionTypes.SET_LANGUAGES, payload: languages }),
+        sendTextMessage: (message) => dispatch({ type: ActionTypes.SEND_TEXT_MESSAGE, payload: message }),
+        setTextInputMode: (mode) => dispatch({ type: ActionTypes.SET_TEXT_INPUT_MODE, payload: mode }),
     };
 
     const value = {

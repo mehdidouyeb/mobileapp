@@ -9,9 +9,9 @@
 
 import { useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { CONFIG } from '../utils/config.js';
+import { CONFIG, generateSystemInstructions } from '../utils/config.js';
 
-export function useGemini(onMessage, onError, onClose, onOpen) {
+export function useGemini(onMessage, onError, onClose, onOpen, languages = null) {
     const sessionRef = useRef(null);
     const clientRef = useRef(null);
 
@@ -20,8 +20,22 @@ export function useGemini(onMessage, onError, onClose, onOpen) {
      */
     const connect = useCallback(async () => {
         try {
+            // Close any existing session first
+            if (clientRef.current) {
+                try {
+                    await clientRef.current.close();
+                } catch (error) {
+                    console.log('No existing session to close');
+                }
+            }
+            
             // Initialize Gemini AI client
             clientRef.current = new GoogleGenAI({ apiKey: CONFIG.API_KEY });
+
+            // Generate system instructions based on selected languages
+        const systemInstruction = (languages && languages.native && languages.target) ?
+            generateSystemInstructions(languages.native, languages.target, languages.level) :
+            CONFIG.SYSTEM_INSTRUCTION;
 
             // Configure session settings
             const sessionConfig = {
@@ -41,7 +55,7 @@ export function useGemini(onMessage, onError, onClose, onOpen) {
                     outputAudioTranscription: {},
 
                     // System instructions for AI behavior
-                    systemInstruction: CONFIG.SYSTEM_INSTRUCTION,
+                    systemInstruction: systemInstruction,
                 },
             };
 
@@ -60,6 +74,15 @@ export function useGemini(onMessage, onError, onClose, onOpen) {
     const sendAudioInput = useCallback((audioBlob) => {
         if (sessionRef.current) {
             sessionRef.current.sendRealtimeInput({ media: audioBlob });
+        }
+    }, []);
+
+    /**
+     * Sends text input to the AI
+     */
+    const sendTextInput = useCallback((text) => {
+        if (sessionRef.current) {
+            sessionRef.current.sendRealtimeInput({ text: text });
         }
     }, []);
 
@@ -83,6 +106,7 @@ export function useGemini(onMessage, onError, onClose, onOpen) {
     return {
         connect,
         sendAudioInput,
+        sendTextInput,
         close,
         isConnected,
     };

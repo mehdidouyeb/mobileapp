@@ -144,6 +144,13 @@ export class DiscussionStorage {
     }
 
     /**
+     * Get the current discussion
+     */
+    getCurrentDiscussion() {
+        return this.currentDiscussion;
+    }
+
+    /**
      * Add feedback to the current discussion
      */
     async addFeedbackToCurrent(rating, notes = '') {
@@ -173,6 +180,111 @@ export class DiscussionStorage {
             return true;
         } catch (error) {
             console.error('Error adding feedback:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Save analysis results to the current discussion
+     */
+    async saveAnalysisToCurrent(analysis) {
+        if (!this.currentDiscussion) return false;
+
+        try {
+            const { error } = await supabase
+                .from('discussions')
+                .update({
+                    analysis,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', this.currentDiscussion.id);
+
+            if (error) {
+                console.error('Error saving analysis:', error);
+                return false;
+            }
+
+            this.currentDiscussion.analysis = analysis;
+            return true;
+        } catch (error) {
+            console.error('Error saving analysis:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Save suggested exercises for future sessions
+     */
+    async saveSuggestedExercises(exercises) {
+        try {
+            const { data, error } = await supabase
+                .from('suggested_exercises')
+                .insert({
+                    user_id: 'anonymous',
+                    exercises,
+                    created_at: new Date().toISOString(),
+                    is_active: true
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error saving suggested exercises:', error);
+                return false;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error saving suggested exercises:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get active suggested exercises
+     */
+    async getActiveSuggestedExercises() {
+        try {
+            const { data, error } = await supabase
+                .from('suggested_exercises')
+                .select('*')
+                .eq('user_id', 'anonymous')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error) {
+                console.error('Error fetching suggested exercises:', error);
+                return null;
+            }
+
+            return data?.exercises || null;
+        } catch (error) {
+            console.error('Error fetching suggested exercises:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Mark suggested exercises as completed
+     */
+    async markExercisesAsCompleted() {
+        try {
+            const { error } = await supabase
+                .from('suggested_exercises')
+                .update({ is_active: false })
+                .eq('user_id', 'anonymous')
+                .eq('is_active', true);
+
+            if (error) {
+                console.error('Error marking exercises as completed:', error);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error marking exercises as completed:', error);
             return false;
         }
     }

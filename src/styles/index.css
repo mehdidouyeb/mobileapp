@@ -4,17 +4,17 @@
 
 :root {
     /* Color Palette */
-    --primary-gradient-start: #667eea;
-    --primary-gradient-end: #764ba2;
-    --secondary-gradient-start: #f093fb;
-    --secondary-gradient-end: #f5576c;
-    --accent-color: #4CAF50;
-    --accent-hover: #45a049;
-    --danger-color: #f44336;
-    --danger-hover: #da190b;
-    --info-color: #2196F3;
-    --info-hover: #1976D2;
-    --warning-color: #FFC107;
+    --primary-gradient-start: #1e3a8a;
+    --primary-gradient-end: #3b82f6;
+    --secondary-gradient-start: #0d9488;
+    --secondary-gradient-end: #14b8a6;
+    --accent-color: #10b981;
+    --accent-hover: #059669;
+    --danger-color: #ef4444;
+    --danger-hover: #dc2626;
+    --info-color: #3b82f6;
+    --info-hover: #2563eb;
+    --warning-color: #f59e0b;
     
     /* Neutral Colors */
     --white: #ffffff;
@@ -82,7 +82,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
     color: var(--white);
-    background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
     overflow-x: hidden;
 }
 

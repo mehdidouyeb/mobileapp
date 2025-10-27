@@ -248,33 +248,46 @@ export function VoiceChat() {
                 </header>
 
                 <main className={styles.main}>
-                    {/* Affichage des paramètres de langue */}
-                    <LanguageDisplay 
-                        languages={languages}
-                        onEditLanguages={handleEditLanguages}
-                        chatMode={currentChatMode}
-                    />
-                    
-                    <ChatArea 
-                        onSendTextMessage={handleSendTextMessage}
-                        isActive={isActive}
-                        chatMode={currentChatMode}
-                    />
-
-                    <div className={styles.footer}>
-                        <ControlButton onSessionEnd={handleSessionEnd} onChatModeChange={handleChatModeChange} />
-                        <StatusDisplay />
-                        <Feedback />
+                    {/* Left side - Chat Area */}
+                    <div className={styles.chatContainer}>
+                        <LanguageDisplay 
+                            languages={languages}
+                            onEditLanguages={handleEditLanguages}
+                            chatMode={currentChatMode}
+                        />
                         
-                        {/* Boutons permanents */}
-                        <div className={styles.permanentButtons}>
-                            <button 
-                                className={styles.historyButton}
-                                onClick={handleShowHistory}
-                            >
-                                📚 Historique
-                            </button>
-                            <ExerciseSuggestions onStartExercise={handleStartExercise} />
+                        <ChatArea 
+                            onSendTextMessage={handleSendTextMessage}
+                            isActive={isActive}
+                            chatMode={currentChatMode}
+                        />
+                    </div>
+
+                    {/* Right side - Controls and Buttons */}
+                    <div className={styles.controlsContainer}>
+                        <div className={styles.controlGroup}>
+                            <ControlButton onSessionEnd={handleSessionEnd} onChatModeChange={handleChatModeChange} />
+                        </div>
+                        
+                        <div className={styles.controlGroup}>
+                            <StatusDisplay />
+                        </div>
+                        
+                        <div className={styles.controlGroup}>
+                            <Feedback />
+                        </div>
+                        
+                        {/* Permanent buttons */}
+                        <div className={styles.controlGroup}>
+                            <div className={styles.permanentButtons}>
+                                <button 
+                                    className={styles.historyButton}
+                                    onClick={handleShowHistory}
+                                >
+                                    📚 Historique
+                                </button>
+                                <ExerciseSuggestions onStartExercise={handleStartExercise} />
+                            </div>
                         </div>
                     </div>
                 </main>

@@ -10,19 +10,26 @@ import { useVoiceChat } from '../context/VoiceChatContext';
 import { ConversationNameInput } from './ConversationNameInput.jsx';
 import styles from './ControlButton.module.css';
 
-export function ControlButton() {
+export function ControlButton({ onSessionEnd, onChatModeChange }) {
     const { startSession, stopSession, reset, isActive } = useSession();
     const { status } = useVoiceChat();
     const [showNameInput, setShowNameInput] = useState(false);
 
-    const handleStartConversation = async (conversationName) => {
-        await startSession(conversationName);
+    const handleStartConversation = async (conversationName, chatMode = 'voice') => {
+        await startSession(conversationName, null, chatMode);
+        // Notify parent component of the chat mode change
+        if (onChatModeChange) {
+            onChatModeChange(chatMode);
+        }
         setShowNameInput(false); // Close the modal after starting
     };
 
-    const handleClick = () => {
+    const handleClick = async () => {
         if (isActive) {
-            stopSession();
+            const endedDiscussion = await stopSession();
+            if (onSessionEnd && endedDiscussion) {
+                onSessionEnd(endedDiscussion);
+            }
         } else {
             setShowNameInput(true);
         }
@@ -30,6 +37,8 @@ export function ControlButton() {
 
     const handleReset = () => {
         reset();
+        // Forcer le reset complet de la session
+        window.location.reload();
     };
 
     const isDisabled = status === 'connecting';
@@ -37,13 +46,13 @@ export function ControlButton() {
     return (
         <>
             <div className={styles.controls}>
-                <button
-                    className={`${styles.controlButton} ${isActive ? styles.stopButton : styles.startButton}`}
-                    onClick={handleClick}
-                    disabled={isDisabled}
-                >
-                    {isDisabled ? 'Connecting...' : (isActive ? 'Stop Chat' : 'Start Chat')}
-                </button>
+                    <button
+                        className={`${styles.controlButton} ${isActive ? styles.stopButton : styles.startButton}`}
+                        onClick={handleClick}
+                        disabled={isDisabled}
+                    >
+                        {isDisabled ? 'Connecting...' : (isActive ? 'Stop Chat' : 'Start New Chat')}
+                    </button>
 
                 <button
                     className={`${styles.controlButton} ${styles.resetButton}`}

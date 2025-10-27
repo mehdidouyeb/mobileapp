@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './ConversationNameInput.module.css';
 
 export function ConversationNameInput({ onStartConversation, isVisible, onClose }) {
@@ -18,8 +19,15 @@ export function ConversationNameInput({ onStartConversation, isVisible, onClose 
 
     if (!isVisible) return null;
 
-    return (
-        <div className={styles.overlay}>
+    return createPortal(
+        <div className={styles.overlay} style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999
+        }}>
             <div className={styles.modal}>
                 <h2>🎤 Start New Conversation</h2>
                 <p>Choose your conversation mode and give it a name:</p>
@@ -80,6 +88,7 @@ export function ConversationNameInput({ onStartConversation, isVisible, onClose 
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

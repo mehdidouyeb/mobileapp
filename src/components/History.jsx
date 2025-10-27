@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './History.module.css';
 
 export function History({ onClose, onViewSessionDetails }) {
@@ -47,8 +48,15 @@ export function History({ onClose, onViewSessionDetails }) {
         }
     };
 
-    return (
-        <div className={styles.history}>
+    return createPortal(
+        <div className={styles.history} style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999
+        }}>
             <div className={styles.header}>
                 <h2>📚 Historique des Sessions</h2>
                 <button onClick={onClose} className={styles.closeButton}>
@@ -109,6 +117,7 @@ export function History({ onClose, onViewSessionDetails }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

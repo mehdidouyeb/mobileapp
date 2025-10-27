@@ -1,62 +1,113 @@
 /**
- * Voice Chat Component Styles
+ * Voice Chat Component Styles - Enhanced Design
  */
 
 .container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+    color: var(--white);
+    font-family: var(--font-family-primary);
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+    isolation: isolate;
 }
 
 .header {
-    padding: 20px;
+    padding: var(--space-md);
     text-align: center;
-    background: rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-md);
 }
 
 .title {
     margin: 0;
-    font-size: 2.5em;
+    font-size: 2rem;
     font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    background: linear-gradient(45deg, #fff, #e0e0e0);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, var(--white) 0%, rgba(255, 255, 255, 0.9) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    letter-spacing: -0.01em;
+}
+
+.title::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-color), var(--info-color));
+    margin: var(--space-sm) auto 0;
+    border-radius: var(--radius-full);
 }
 
 .main {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
+    flex-direction: row;
+    padding: var(--space-md);
+    gap: var(--space-md);
     width: 100%;
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+    isolation: isolate;
 }
 
-.footer {
+.chatContainer {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px;
+    gap: var(--space-md);
+    overflow: hidden;
+    min-width: 0;
+    position: relative;
+    z-index: 0;
+}
+
+.controlsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 300px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    position: relative;
+    z-index: 0;
+}
+
+.controlGroup {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-md);
 }
 
 .permanentButtons {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 12px;
     width: 100%;
-    max-width: 400px;
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
 .historyButton {
-    background: linear-gradient(135deg, #4caf50, #45a049);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: white;
     border: none;
     padding: 12px 20px;
@@ -69,48 +120,102 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .historyButton:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, #059669, #047857);
 }
 
-/* Responsive footer layout */
+/* Enhanced responsive layout */
 @media (min-width: 768px) {
-    .footer {
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
+    .controlsContainer {
+        width: 320px;
     }
 }
 
-/* Responsive design */
+/* Responsive design improvements */
 @media (max-width: 768px) {
     .title {
-        font-size: 2em;
+        font-size: 1.75rem;
     }
 
     .main {
-        padding: 15px;
+        flex-direction: column;
+        padding: var(--space-md);
+        gap: var(--space-md);
     }
 
     .header {
-        padding: 15px;
+        padding: var(--space-md);
+    }
+    
+    .chatContainer {
+        flex: 1;
+        min-height: 400px;
+    }
+    
+    .controlsContainer {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-sm);
+    }
+    
+    .controlGroup {
+        flex: 1;
+        min-width: 150px;
+        max-width: 200px;
+    }
+    
+    .permanentButtons {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
     }
 }
 
 @media (max-width: 480px) {
     .title {
-        font-size: 1.5em;
+        font-size: 1.5rem;
     }
 
     .main {
-        padding: 10px;
+        padding: var(--space-sm);
+        gap: var(--space-sm);
     }
 
     .header {
-        padding: 10px;
+        padding: var(--space-sm);
+    }
+    
+    .controlsContainer {
+        gap: var(--space-sm);
+    }
+    
+    .historyButton {
+        font-size: 0.9rem;
+        padding: 10px 16px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .container {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    }
+    
+    .header {
+        background: rgba(15, 23, 42, 0.9);
+        border-bottom: 2px solid var(--white);
+    }
+    
+    .footer {
+        background: rgba(15, 23, 42, 0.9);
+        border: 2px solid var(--white);
     }
 }

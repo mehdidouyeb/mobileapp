@@ -242,42 +242,57 @@ export function VoiceChat() {
         };
 
         return (
-            <div className={styles.container}>
-                <header className={styles.header}>
-                    <h1 className={styles.title}>AI Coach</h1>
-                </header>
+            <>
+                <div className={styles.container}>
+                    <header className={styles.header}>
+                        <h1 className={styles.title}>AI Coach</h1>
+                    </header>
 
-                <main className={styles.main}>
-                    {/* Affichage des paramètres de langue */}
-                    <LanguageDisplay 
-                        languages={languages}
-                        onEditLanguages={handleEditLanguages}
-                        chatMode={currentChatMode}
-                    />
-                    
-                    <ChatArea 
-                        onSendTextMessage={handleSendTextMessage}
-                        isActive={isActive}
-                        chatMode={currentChatMode}
-                    />
-
-                    <div className={styles.footer}>
-                        <ControlButton onSessionEnd={handleSessionEnd} onChatModeChange={handleChatModeChange} />
-                        <StatusDisplay />
-                        <Feedback />
-                        
-                        {/* Boutons permanents */}
-                        <div className={styles.permanentButtons}>
-                            <button 
-                                className={styles.historyButton}
-                                onClick={handleShowHistory}
-                            >
-                                📚 Historique
-                            </button>
-                            <ExerciseSuggestions onStartExercise={handleStartExercise} />
+                    <main className={styles.main}>
+                        {/* Left side - Chat Area */}
+                        <div className={styles.chatContainer}>
+                            <LanguageDisplay 
+                                languages={languages}
+                                onEditLanguages={handleEditLanguages}
+                                chatMode={currentChatMode}
+                            />
+                            
+                            <ChatArea 
+                                onSendTextMessage={handleSendTextMessage}
+                                isActive={isActive}
+                                chatMode={currentChatMode}
+                            />
                         </div>
-                    </div>
-                </main>
+
+                        {/* Right side - Controls and Buttons */}
+                        <div className={styles.controlsContainer}>
+                            <div className={styles.controlGroup}>
+                                <ControlButton onSessionEnd={handleSessionEnd} onChatModeChange={handleChatModeChange} />
+                            </div>
+                            
+                            <div className={styles.controlGroup}>
+                                <StatusDisplay />
+                            </div>
+                            
+                            <div className={styles.controlGroup}>
+                                <Feedback />
+                            </div>
+                            
+                            {/* Permanent buttons */}
+                            <div className={styles.controlGroup}>
+                                <div className={styles.permanentButtons}>
+                                    <button 
+                                        className={styles.historyButton}
+                                        onClick={handleShowHistory}
+                                    >
+                                        📚 Historique
+                                    </button>
+                                    <ExerciseSuggestions onStartExercise={handleStartExercise} />
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
 
                 {/* Dashboard d'analyse */}
                 {showDashboard && (
@@ -304,8 +319,7 @@ export function VoiceChat() {
                     onLanguageSelect={handleLanguageSelect}
                     onClose={handleCloseLanguageSelector}
                 />
-
-            </div>
+            </>
         );
     } catch (error) {
         console.error('Error in VoiceChat component:', error);

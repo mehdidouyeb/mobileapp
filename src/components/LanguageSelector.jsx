@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './LanguageSelector.module.css';
 
 const LANGUAGES = [
@@ -75,8 +76,15 @@ export function LanguageSelector({ onLanguageSelect, isVisible, onClose }) {
 
     if (!isVisible) return null;
 
-    return (
-        <div className={styles.overlay}>
+    return createPortal(
+        <div className={styles.overlay} style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999
+        }}>
             <div className={styles.container}>
                 <div className={styles.header}>
                     <h2>Configuration des Langues</h2>
@@ -203,6 +211,7 @@ export function LanguageSelector({ onLanguageSelect, isVisible, onClose }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

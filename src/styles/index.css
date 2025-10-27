@@ -214,3 +214,37 @@ textarea:focus-visible {
 .animate-bounce {
     animation: bounce 1s infinite;
 }
+
+/* Global modal positioning - force all modals to the top layer */
+body > div[style*="zIndex: 99999"],
+body > div[style*="z-index: 99999"] {
+    position: fixed !important;
+    z-index: 99999 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+}
+
+/* Prevent body scroll when modals are open */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Ensure app container and all children stay below modals */
+#root {
+    z-index: 1 !important;
+    position: relative;
+}
+
+#root * {
+    z-index: inherit !important;
+}
+
+/* Force app content to stay at bottom layer */
+.container,
+.main,
+.chatContainer,
+.controlsContainer {
+    z-index: 0 !important;
+}

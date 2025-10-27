@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useVoiceChat } from '../context/VoiceChatContext';
 import { extractAnalysisFromResponse, generateDefaultAnalysis, analyzeMessages } from '../utils/analysisService';
 import styles from './Dashboard.module.css';
@@ -107,18 +108,33 @@ export function Dashboard({ discussionId, onClose, onStartExercise, sessionDetai
     }, [analysis, onAnalysisUpdate, sessionDetails]);
 
     if (loading) {
-        return (
-            <div className={styles.dashboard}>
+        return createPortal(
+            <div className={styles.dashboard} style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 99999
+            }}>
                 <div className={styles.loading}>
                     <div className={styles.spinner}></div>
                     <p>Analyse de votre discussion en cours...</p>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
-    return (
-        <div className={styles.dashboard}>
+    return createPortal(
+        <div className={styles.dashboard} style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999
+        }}>
             <div className={styles.header}>
                 <h2>📊 Rapport de Progression</h2>
                 <button onClick={onClose} className={styles.closeButton}>
@@ -238,6 +254,7 @@ export function Dashboard({ discussionId, onClose, onStartExercise, sessionDetai
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useVoiceChat } from '../context/VoiceChatContext';
 import styles from './ExerciseSuggestions.module.css';
 
@@ -124,8 +125,15 @@ export function ExerciseSuggestions({ onStartExercise }) {
                 💡 Suggestions d'exercices
             </button>
 
-            {isOpen && (
-                <div className={styles.overlay}>
+            {isOpen && createPortal(
+                <div className={styles.overlay} style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 99999
+                }}>
                     <div className={styles.container}>
                         <div className={styles.header}>
                             <h2>💡 Suggestions d'Exercices</h2>
@@ -219,7 +227,8 @@ export function ExerciseSuggestions({ onStartExercise }) {
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

@@ -18,18 +18,21 @@ import { useVoiceChat } from '../context/VoiceChatContext';
 import { useExerciseManager } from '../hooks/useExerciseManager';
 import { useSession } from '../hooks/useSession';
 import { discussionStorage } from '../utils/discussionStorage';
+import { supabase } from '../utils/supabase';
+import { createUserStorage } from '../utils/userStorage';
 import styles from './VoiceChat.module.css';
 
-export function VoiceChat() {
+export function VoiceChat({ user }) {
     console.log('VoiceChat component rendering...');
     
     try {
-        const { isActive, messages, clearMessages, languages, setLanguages, sendTextMessage } = useVoiceChat();
+        const { isActive, messages, clearMessages, languages, setLanguages, sendTextMessage, onLogout } = useVoiceChat();
         const { startExercise, getExerciseOpeningMessage } = useExerciseManager();
         const { startSession, sendTextMessageToAI } = useSession();
         const [showDashboard, setShowDashboard] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
-        const [showLanguageSelector, setShowLanguageSelector] = useState(!languages?.native || !languages?.target || !languages?.level);
+        const [showLanguageSelector, setShowLanguageSelector] = useState(false); // Commencer par false, sera mis à jour après chargement
+        const [isLoadingLanguages, setIsLoadingLanguages] = useState(true); // Flag pour indiquer le chargement
         const [currentDiscussionId, setCurrentDiscussionId] = useState(null);
         const [currentConversationName, setCurrentConversationName] = useState(null);
         const [hasShownDashboard, setHasShownDashboard] = useState(false);
@@ -37,29 +40,75 @@ export function VoiceChat() {
         const [currentDashboardAnalysis, setCurrentDashboardAnalysis] = useState(null);
         const [currentChatMode, setCurrentChatMode] = useState('voice'); // 'voice' or 'text'
 
-        // Charger les paramètres de langue depuis localStorage (une seule fois au chargement)
+        // Charger les paramètres de langue depuis le storage approprié
         useEffect(() => {
-            const savedLanguageSettings = localStorage.getItem('languageSettings');
-            if (savedLanguageSettings) {
-                try {
-                    const languageData = JSON.parse(savedLanguageSettings);
-                    if (languageData.native && languageData.target && languageData.level) {
-                        setLanguages(languageData);
-                        setShowLanguageSelector(false);
+            const loadLanguageSettings = async () => {
+                setIsLoadingLanguages(true);
+                
+                // Attendre un court délai pour s'assurer que App.jsx a terminé le chargement
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                let languageData = null;
+                
+                if (user && user.id) {
+                    // Utiliser UserStorage pour l'utilisateur connecté
+                    const userStorage = createUserStorage(user.id);
+                    
+                    // Vérifier dans localStorage d'abord
+                    languageData = userStorage.getItem('language_settings', null);
+                    
+                    // Si pas dans localStorage, essayer de charger depuis Supabase
+                    if (!languageData) {
+                        console.log('Aucun paramètre trouvé dans localStorage, chargement depuis Supabase...');
+                        languageData = await userStorage.loadLanguageSettings();
+                        if (languageData) {
+                            console.log('✅ Paramètres chargés depuis Supabase');
+                        }
                     } else {
-                        setShowLanguageSelector(true);
+                        console.log('✅ Paramètres trouvés dans localStorage');
                     }
-                } catch (error) {
-                    console.error('Erreur lors du chargement des paramètres de langue:', error);
-                    // Réinitialiser les paramètres si ils sont corrompus
-                    localStorage.removeItem('languageSettings');
+                } else {
+                    // Mode invité - charger depuis la clé générique
+                    const savedLanguageSettings = localStorage.getItem('languageSettings');
+                    if (savedLanguageSettings) {
+                        try {
+                            languageData = JSON.parse(savedLanguageSettings);
+                            console.log('✅ Paramètres trouvés pour le mode invité');
+                        } catch (error) {
+                            console.error('Erreur lors du chargement des paramètres de langue:', error);
+                        }
+                    }
+                }
+                
+                // Vérifier si les paramètres sont complets
+                if (languageData && languageData.native && languageData.target && languageData.level) {
+                    // Paramètres existants : les charger et masquer le sélecteur
+                    // Vérifier si les paramètres ont réellement changé pour éviter la boucle infinie
+                    const hasChanged = !languages || 
+                        JSON.stringify(languages) !== JSON.stringify(languageData);
+                    
+                    if (hasChanged) {
+                        setLanguages(languageData);
+                        console.log('✅ Paramètres de langue chargés dans le contexte:', {
+                            native: languageData.native?.name,
+                            target: languageData.target?.name,
+                            level: languageData.level?.code
+                        });
+                    }
+                    setShowLanguageSelector(false);
+                } else {
+                    // Aucun paramètre : afficher le sélecteur
+                    console.log('⚠️ Aucun paramètre de langue trouvé');
+                    console.log('Contenu de languageData:', languageData);
                     setShowLanguageSelector(true);
                 }
-            } else {
-                // Si aucun paramètre n'est sauvegardé, afficher le sélecteur
-                setShowLanguageSelector(true);
-            }
-        }, []); // Dépendances vides = exécution unique au montage
+                
+                setIsLoadingLanguages(false);
+                console.log('✅ Chargement des paramètres terminé');
+            };
+            
+            loadLanguageSettings();
+        }, [user]); // Re-exécuter quand l'utilisateur change
 
         // Réinitialiser hasShownDashboard quand une nouvelle session démarre
         React.useEffect(() => {
@@ -69,16 +118,7 @@ export function VoiceChat() {
             }
         }, [isActive]);
 
-        // Stocker le nom de conversation quand une nouvelle session démarre
-        React.useEffect(() => {
-            if (isActive && messages.length === 1) {
-                // Une nouvelle session vient de démarrer, récupérer le nom de conversation
-                const currentDiscussion = discussionStorage.getCurrentDiscussion();
-                if (currentDiscussion?.conversation_name) {
-                    setCurrentConversationName(currentDiscussion.conversation_name);
-                }
-            }
-        }, [isActive, messages.length]);
+
 
         // Afficher le dashboard quand la session se termine et qu'il y a des messages
         React.useEffect(() => {
@@ -93,7 +133,7 @@ export function VoiceChat() {
             }
         }, [isActive, messages.length, showDashboard, hasShownDashboard]);
 
-        const handleCloseDashboard = () => {
+        const handleCloseDashboard = async () => {
             setShowDashboard(false);
             // Empêcher le dashboard de se rouvrir automatiquement
             setHasShownDashboard(true);
@@ -106,11 +146,9 @@ export function VoiceChat() {
             }
             
             // Ajouter la session à l'historique
-            const sessionId = currentDiscussionId || Date.now(); // Utiliser l'ID existant ou créer un nouveau
-            
-            // Utiliser le nom de conversation stocké ou un nom par défaut
-            const conversationName = currentConversationName || `Session du ${new Date().toLocaleDateString('fr-FR')}`;
-            
+            const sessionId = currentDiscussionId || Date.now();
+            // Utiliser le nom de conversation fourni par l'utilisateur ou un nom par défaut
+            const conversationName = currentConversationName || 'Nouvelle session';
             
             const sessionData = {
                 id: sessionId,
@@ -119,21 +157,40 @@ export function VoiceChat() {
                 duration: 'Session terminée',
                 rating: 0,
                 summary: 'Session d\'apprentissage terminée',
-                dashboardAnalysis: currentDashboardAnalysis // Sauvegarder l'analyse du dashboard
+                dashboardAnalysis: currentDashboardAnalysis
             };
             
-            // Récupérer l'historique existant
-            const existingHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-            
-            // Vérifier si la session n'est pas déjà dans l'historique
-            const sessionExists = existingHistory.some(session => session.id === sessionId);
-            
-            if (!sessionExists) {
-                // Ajouter la nouvelle session au début de la liste
-                const updatedHistory = [sessionData, ...existingHistory];
+            if (user && user.id) {
+                // Utiliser UserStorage pour sauvegarder
+                try {
+                    const userStorage = createUserStorage(user.id);
+                    
+                    // Récupérer l'historique actuel depuis le storage namespaced
+                    const existingHistory = userStorage.getItem('chat_history', []);
+                    
+                    // Vérifier si la session n'existe pas déjà
+                    const sessionExists = existingHistory.some(session => session.id === sessionId);
+                    
+                    if (!sessionExists) {
+                        // Ajouter la nouvelle session
+                        const updatedHistory = [sessionData, ...existingHistory];
+                        userStorage.setItem('chat_history', updatedHistory);
+                        
+                        // Sauvegarder dans Supabase
+                        await userStorage.saveSession(sessionData);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la sauvegarde de la session:', error);
+                }
+            } else {
+                // Mode invité - utiliser localStorage générique
+                const existingHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+                const sessionExists = existingHistory.some(session => session.id === sessionId);
                 
-                // Sauvegarder dans localStorage
-                localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+                if (!sessionExists) {
+                    const updatedHistory = [sessionData, ...existingHistory];
+                    localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+                }
             }
             
             setCurrentDiscussionId(null);
@@ -143,8 +200,13 @@ export function VoiceChat() {
         };
 
         const handleSessionEnd = (discussionData) => {
-            setCurrentDiscussionId(discussionData?.id);
-            setCurrentConversationName(discussionData?.conversation_name);
+            if (discussionData?.id) {
+                setCurrentDiscussionId(discussionData.id);
+            }
+            if (discussionData?.conversation_name) {
+                console.log('📝 Nom de conversation reçu:', discussionData.conversation_name);
+                setCurrentConversationName(discussionData.conversation_name);
+            }
             
             // La session sera ajoutée à l'historique quand le dashboard sera fermé
             // Pas de sauvegarde automatique ici
@@ -156,13 +218,26 @@ export function VoiceChat() {
             // setHasShownDashboard(false); // Commenté pour éviter la réouverture automatique
         };
 
-        const handleLanguageSelect = (languageData) => {
+        const handleLanguageSelect = async (languageData) => {
             if (languageData && languageData.native && languageData.target && languageData.level) {
                 console.log('Language selected:', languageData);
                 setLanguages(languageData);
                 setShowLanguageSelector(false);
-                // Save to localStorage for persistence
-                localStorage.setItem('languageSettings', JSON.stringify(languageData));
+                
+                // Sauvegarder les paramètres
+                if (user && user.id) {
+                    // Utiliser UserStorage pour sauvegarder
+                    try {
+                        const userStorage = createUserStorage(user.id);
+                        await userStorage.saveLanguageSettings(languageData);
+                        console.log('✅ Paramètres de langue sauvegardés avec succès');
+                    } catch (error) {
+                        console.error('Erreur lors de la sauvegarde des paramètres:', error);
+                    }
+                } else {
+                    // Mode invité
+                    localStorage.setItem('languageSettings', JSON.stringify(languageData));
+                }
             } else {
                 console.error('Données de langue invalides:', languageData);
             }
@@ -193,6 +268,11 @@ export function VoiceChat() {
         const handleChatModeChange = (chatMode) => {
             console.log('Chat mode changed to:', chatMode);
             setCurrentChatMode(chatMode);
+        };
+
+        const handleConversationNameSet = (conversationName) => {
+            console.log('📝 Nom de conversation défini:', conversationName);
+            setCurrentConversationName(conversationName);
         };
 
         const handleEditLanguages = () => {
@@ -241,28 +321,66 @@ export function VoiceChat() {
             setCurrentDashboardAnalysis(analysis);
         };
 
+        // Afficher un écran de chargement pendant la vérification des paramètres
+        if (isLoadingLanguages) {
+            return (
+                <div className={styles.container}>
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100vh',
+                        flexDirection: 'column'
+                    }}>
+                        <div className={styles.loading} style={{ fontSize: '1.2em', marginBottom: '20px' }}>
+                            Chargement de vos paramètres...
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className={styles.container}>
                 <header className={styles.header}>
                     <h1 className={styles.title}>AI Coach</h1>
+                    {user && onLogout && (
+                        <button 
+                            className={styles.logoutButton}
+                            onClick={onLogout}
+                            title="Se déconnecter"
+                        >
+                            Se déconnecter
+                        </button>
+                    )}
                 </header>
 
                 <main className={styles.main}>
-                    {/* Affichage des paramètres de langue */}
-                    <LanguageDisplay 
-                        languages={languages}
-                        onEditLanguages={handleEditLanguages}
-                        chatMode={currentChatMode}
-                    />
-                    
-                    <ChatArea 
-                        onSendTextMessage={handleSendTextMessage}
-                        isActive={isActive}
-                        chatMode={currentChatMode}
-                    />
+                    <div className={styles.mainContent}>
+                        <div className={styles.chatWrapper}>
+                            <ChatArea 
+                                onSendTextMessage={handleSendTextMessage}
+                                isActive={isActive}
+                                chatMode={currentChatMode}
+                            />
+                        </div>
+                        
+                        {/* Affichage des paramètres de langue à droite */}
+                        <div className={styles.sidebar}>
+                            <LanguageDisplay 
+                                languages={languages}
+                                onEditLanguages={handleEditLanguages}
+                                chatMode={currentChatMode}
+                            />
+                        </div>
+                    </div>
 
                     <div className={styles.footer}>
-                        <ControlButton onSessionEnd={handleSessionEnd} onChatModeChange={handleChatModeChange} />
+                        <ControlButton 
+                            onSessionEnd={handleSessionEnd} 
+                            onChatModeChange={handleChatModeChange}
+                            onConversationNameSet={handleConversationNameSet}
+                        />
                         <StatusDisplay />
                         <Feedback />
                         
@@ -274,7 +392,7 @@ export function VoiceChat() {
                             >
                                 📚 Historique
                             </button>
-                            <ExerciseSuggestions onStartExercise={handleStartExercise} />
+                            <ExerciseSuggestions onStartExercise={handleStartExercise} user={user} />
                         </div>
                     </div>
                 </main>
@@ -287,6 +405,7 @@ export function VoiceChat() {
                         onStartExercise={handleStartExercise}
                         sessionDetails={viewingSessionDetails}
                         onAnalysisUpdate={handleAnalysisUpdate}
+                        user={user}
                     />
                 )}
 
@@ -295,15 +414,18 @@ export function VoiceChat() {
                     <History 
                         onClose={handleCloseHistory}
                         onViewSessionDetails={handleViewSessionDetails}
+                        user={user}
                     />
                 )}
 
-                {/* Sélecteur de langues */}
-                <LanguageSelector 
-                    isVisible={showLanguageSelector}
-                    onLanguageSelect={handleLanguageSelect}
-                    onClose={handleCloseLanguageSelector}
-                />
+                {/* Sélecteur de langues - ne pas afficher pendant le chargement */}
+                {!isLoadingLanguages && (
+                    <LanguageSelector 
+                        isVisible={showLanguageSelector}
+                        onLanguageSelect={handleLanguageSelect}
+                        onClose={handleCloseLanguageSelector}
+                    />
+                )}
 
             </div>
         );

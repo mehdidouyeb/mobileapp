@@ -5,45 +5,57 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createUserStorage } from '../utils/userStorage';
 import styles from './History.module.css';
 
-export function History({ onClose, onViewSessionDetails }) {
+export function History({ onClose, onViewSessionDetails, user }) {
     // L'historique commence vide et se remplira avec les vraies sessions
     const [historyData, setHistoryData] = useState([]);
 
-    // Charger l'historique depuis le localStorage ou une base de données
+    // Charger l'historique depuis le localStorage
     useEffect(() => {
         const loadHistory = () => {
-            const savedHistory = localStorage.getItem('chatHistory');
-            if (savedHistory) {
-                setHistoryData(JSON.parse(savedHistory));
+            if (user && user.id) {
+                // Utiliser UserStorage pour l'utilisateur connecté
+                const userStorage = createUserStorage(user.id);
+                const savedHistory = userStorage.getItem('chat_history', []);
+                setHistoryData(savedHistory);
+            } else {
+                // Mode invité
+                const savedHistory = localStorage.getItem('chatHistory');
+                if (savedHistory) {
+                    setHistoryData(JSON.parse(savedHistory));
+                }
             }
         };
         
         loadHistory();
         
-        // Écouter les changements dans localStorage
-        const handleStorageChange = () => {
-            loadHistory();
-        };
-        
-        window.addEventListener('storage', handleStorageChange);
-        
-        // Vérifier les changements toutes les secondes (pour les changements dans la même fenêtre)
+        // Vérifier les changements toutes les secondes
         const interval = setInterval(loadHistory, 1000);
         
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
             clearInterval(interval);
         };
-    }, []);
+    }, [user]);
 
     // Fonction pour supprimer une session de l'historique
-    const handleDeleteSession = (sessionId) => {
+    const handleDeleteSession = async (sessionId) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette session de l\'historique ?')) {
             const updatedHistory = historyData.filter(session => session.id !== sessionId);
             setHistoryData(updatedHistory);
-            localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+            
+            if (user && user.id) {
+                // Utiliser UserStorage pour l'utilisateur connecté
+                const userStorage = createUserStorage(user.id);
+                userStorage.setItem('chat_history', updatedHistory);
+                
+                // Supprimer de Supabase également
+                await userStorage.deleteSession(sessionId);
+            } else {
+                // Mode invité
+                localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+            }
         }
     };
 

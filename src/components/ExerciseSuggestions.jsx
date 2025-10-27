@@ -6,42 +6,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useVoiceChat } from '../context/VoiceChatContext';
+import { createUserStorage } from '../utils/userStorage';
 import styles from './ExerciseSuggestions.module.css';
 
-export function ExerciseSuggestions({ onStartExercise }) {
+export function ExerciseSuggestions({ onStartExercise, user }) {
     const [isOpen, setIsOpen] = useState(false);
     const [completedExercises, setCompletedExercises] = useState([]);
+    const [customExercises, setCustomExercises] = useState([]);
     const { languages } = useVoiceChat();
-
-    // Charger les exercices complétés depuis l'historique
-    useEffect(() => {
-        const loadCompletedExercises = () => {
-            const savedHistory = localStorage.getItem('chatHistory');
-            if (savedHistory) {
-                const history = JSON.parse(savedHistory);
-                const completed = history
-                    .filter(session => session.conversationName && 
-                        exercises.some(ex => ex.title === session.conversationName))
-                    .map(session => session.conversationName);
-                setCompletedExercises(completed);
-            }
-        };
-        
-        loadCompletedExercises();
-        
-        // Écouter les changements dans localStorage
-        const handleStorageChange = () => {
-            loadCompletedExercises();
-        };
-        
-        window.addEventListener('storage', handleStorageChange);
-        const interval = setInterval(loadCompletedExercises, 1000); // Pour les changements dans la même fenêtre
-        
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            clearInterval(interval);
-        };
-    }, []);
 
     // Générer des exercices adaptés aux langues sélectionnées
     const generateExercises = () => {
@@ -88,7 +60,65 @@ export function ExerciseSuggestions({ onStartExercise }) {
         ];
     };
 
-    const exercises = languages ? generateExercises() : [];
+    // Charger les exercices complétés et personnalisés
+    useEffect(() => {
+        const loadData = () => {
+            if (user && user.id) {
+                // Utiliser UserStorage pour l'utilisateur connecté
+                const userStorage = createUserStorage(user.id);
+                
+                // Charger l'historique
+                const history = userStorage.getItem('chat_history', []);
+                const baseExercisesList = languages ? generateExercises() : [];
+                const allExercises = [...baseExercisesList, ...customExercises];
+                const completed = history
+                    .filter(session => session.conversationName && 
+                        allExercises.some(ex => ex.title === session.conversationName))
+                    .map(session => session.conversationName);
+                setCompletedExercises(completed);
+                
+                // Charger les exercices personnalisés
+                const exercises = userStorage.getItem('custom_exercises', []);
+                setCustomExercises(exercises);
+            } else {
+                // Mode invité
+                const savedHistory = localStorage.getItem('chatHistory');
+                if (savedHistory) {
+                    const history = JSON.parse(savedHistory);
+                    const baseExercisesList = languages ? generateExercises() : [];
+                    const allExercises = [...baseExercisesList, ...customExercises];
+                    const completed = history
+                        .filter(session => session.conversationName && 
+                            allExercises.some(ex => ex.title === session.conversationName))
+                        .map(session => session.conversationName);
+                    setCompletedExercises(completed);
+                }
+                
+                const savedCustomExercises = localStorage.getItem('customExercises');
+                if (savedCustomExercises) {
+                    try {
+                        const exercises = JSON.parse(savedCustomExercises);
+                        setCustomExercises(exercises);
+                    } catch (error) {
+                        console.error('Erreur lors du chargement des exercices personnalisés:', error);
+                    }
+                }
+            }
+        };
+        
+        loadData();
+        
+        // Vérifier les changements toutes les secondes
+        const interval = setInterval(loadData, 1000);
+        
+        return () => {
+            clearInterval(interval);
+        };
+    }, [languages, user]); // Retirer customExercises pour éviter la boucle infinie
+
+    // Combiner les exercices de base avec les exercices personnalisés
+    const baseExercises = languages ? generateExercises() : [];
+    const exercises = [...baseExercises, ...customExercises];
 
     const handleExerciseClick = (exercise) => {
         onStartExercise(exercise);
@@ -96,17 +126,28 @@ export function ExerciseSuggestions({ onStartExercise }) {
     };
 
     // Fonction pour supprimer un exercice complété
-    const handleDeleteCompletedExercise = (exerciseTitle) => {
+    const handleDeleteCompletedExercise = async (exerciseTitle) => {
         if (window.confirm(`Êtes-vous sûr de vouloir supprimer "${exerciseTitle}" de vos exercices complétés ?`)) {
-            // Supprimer l'exercice de l'historique
-            const savedHistory = localStorage.getItem('chatHistory');
-            if (savedHistory) {
-                const history = JSON.parse(savedHistory);
+            if (user && user.id) {
+                // Utiliser UserStorage pour l'utilisateur connecté
+                const userStorage = createUserStorage(user.id);
+                const history = userStorage.getItem('chat_history', []);
                 const updatedHistory = history.filter(session => session.conversationName !== exerciseTitle);
-                localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+                userStorage.setItem('chat_history', updatedHistory);
                 
                 // Mettre à jour l'état local
                 setCompletedExercises(prev => prev.filter(title => title !== exerciseTitle));
+            } else {
+                // Mode invité
+                const savedHistory = localStorage.getItem('chatHistory');
+                if (savedHistory) {
+                    const history = JSON.parse(savedHistory);
+                    const updatedHistory = history.filter(session => session.conversationName !== exerciseTitle);
+                    localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
+                    
+                    // Mettre à jour l'état local
+                    setCompletedExercises(prev => prev.filter(title => title !== exerciseTitle));
+                }
             }
         }
     };

@@ -146,7 +146,7 @@ function voiceChatReducer(state, action) {
 const VoiceChatContext = createContext();
 
 // Provider component
-export function VoiceChatProvider({ children }) {
+export function VoiceChatProvider({ children, user, onLogout }) {
     const [state, dispatch] = useReducer(voiceChatReducer, initialState);
 
     // Action creators
@@ -170,6 +170,8 @@ export function VoiceChatProvider({ children }) {
     const value = {
         ...state,
         ...actions,
+        user,
+        onLogout,
     };
 
     return (

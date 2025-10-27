@@ -10,12 +10,17 @@ import { useVoiceChat } from '../context/VoiceChatContext';
 import { ConversationNameInput } from './ConversationNameInput.jsx';
 import styles from './ControlButton.module.css';
 
-export function ControlButton({ onSessionEnd, onChatModeChange }) {
+export function ControlButton({ onSessionEnd, onChatModeChange, onConversationNameSet }) {
     const { startSession, stopSession, reset, isActive } = useSession();
     const { status } = useVoiceChat();
     const [showNameInput, setShowNameInput] = useState(false);
 
     const handleStartConversation = async (conversationName, chatMode = 'voice') => {
+        // Notifier le parent du nom de conversation avant de démarrer
+        if (onConversationNameSet) {
+            onConversationNameSet(conversationName);
+        }
+        
         await startSession(conversationName, null, chatMode);
         // Notify parent component of the chat mode change
         if (onChatModeChange) {

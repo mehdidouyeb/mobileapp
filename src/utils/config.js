@@ -207,39 +207,73 @@ export const CONFIG = {
         '  "next_session_focus": ["…"]\n' +
         '}\n\n' +
         'ANALYSIS & FEEDBACK SYSTEM:\n' +
-        'At the end of each session, provide a detailed analysis in this specific format:\n' +
-        '{\n' +
-        '  "positive_points": [\n' +
-        '    "Specific examples of what the learner did well (e.g., \'Excellent use of past tense in \'I went to the store\'\')",\n' +
-        '    "Vocabulary improvements observed (e.g., \'Great use of new vocabulary word \'delicious\' in context\')",\n' +
-        '    "Fluency improvements (e.g., \'Noticeable reduction in pauses compared to last session\')",\n' +
-        '    "Participation quality (e.g., \'Active engagement with 8 meaningful contributions\')\n' +
-        '  ],\n' +
-        '  "progress": [\n' +
-        '    "Specific improvements from previous sessions (e.g., \'Better pronunciation of \'th\' sounds\')",\n' +
-        '    "New skills demonstrated (e.g., \'Successfully used conditional tense for the first time\')",\n' +
-        '    "Confidence building (e.g., \'Increased willingness to attempt complex sentences\')\n' +
-        '  ],\n' +
-        '  "improvement_areas": [\n' +
-        '    "Specific grammar points to work on (e.g., \'Work on subject-verb agreement in plural sentences\')",\n' +
-        '    "Pronunciation focus (e.g., \'Practice \'r\' sounds in words like \'restaurant\' and \'really\'\')",\n' +
-        '    "Vocabulary expansion (e.g., \'Learn more descriptive adjectives for expressing opinions\')\n' +
-        '  ],\n' +
-        '  "recurring_errors": [\n' +
-        '    "Specific errors observed multiple times (e.g., \'Consistent confusion between \'there\' and \'their\'\')",\n' +
-        '    "Patterns to address (e.g., \'Tendency to omit articles before nouns\')\n' +
-        '  ],\n' +
-        '  "suggested_exercises": [\n' +
-        '    {\n' +
-        '      "title": "Specific exercise name",\n' +
-        '      "description": "Detailed description of what the exercise involves",\n' +
-        '      "difficulty": "Appropriate difficulty level",\n' +
-        '      "duration": "Realistic time estimate",\n' +
-        '      "openingMessage": "Specific opening message for the exercise"\n' +
-        '    }\n' +
-        '  ]\n' +
-        '}\n\n' +
-        'IMPORTANT: Base all analysis on actual conversation content. Be specific with examples. Avoid generic feedback.\n\n' +
+'CRITICAL: At the end of each session, you MUST analyze the ENTIRE conversation and provide data-driven feedback.\n' +
+'STEP 1: Error Detection Analysis:\n' +
+'- Scan ALL user messages for linguistic errors (grammar, vocabulary, pronunciation hints, fluency issues)\n' +
+'- Identify RECURRING patterns (errors that appear 2+ times in the conversation)\n' +
+'- Examples of detectable errors:\n' +
+'  * Grammar: Wrong verb forms ("I goed", "he eated"), missing articles ("I want apple"), wrong tense usage\n' +
+'  * Vocabulary: Limited word variety (overusing "good", "nice", "thing"), incorrect word choices\n' +
+'  * Fluency: Sentences too short (≤3 words), lack of connectors (and, but, because), incomplete thoughts\n' +
+'  * Pronunciation clues: If user writes "I herd" for "heard", indicate pronunciation practice\n' +
+'\n' +
+'STEP 2: Create Data-Driven Feedback:\n' +
+'Base your entire analysis JSON on the actual errors you detected in the conversation.\n' +
+'{\n' +
+'  "positive_points": [\n' +
+'    "Quote actual user messages that demonstrate good language use (e.g., \'Excellent use of past tense in message: \'\'I went to the store\'\'\')\n' +
+'    "Be specific: cite the exact word/sentence from the conversation that shows improvement\n' +
+'    "Count actual contributions: \'Active participation with [X] messages during the session\'\n' +
+'  ],\n' +
+'  "progress": [\n' +
+'    "Compare current session to what you know about learner history (first-time user vs returning)\n' +
+'    "Note specific vocabulary introduced and successfully used (e.g., \'Successfully incorporated new word \'delicious\' naturally in context\'\n' +
+'    "Mention observable improvements in complexity or accuracy\n' +
+'  ],\n' +
+'  "improvement_areas": [\n' +
+'    "List SPECIFIC grammar points based on actual errors found (e.g., \'Work on past tense irregular verbs - user said \'\'goed\'\' instead of \'\'went\'\'\n' +
+'    "Identify pronunciation issues if spelling errors reveal them (e.g., \'Practice distinguishing /r/ and /l/ sounds - \'really\' was written as \'rearry\'\n' +
+'    "Suggest vocabulary expansion if user overused specific words (e.g., \'Expand descriptive vocabulary beyond \'good\' and \'nice\'\n' +
+'  ],\n' +
+'  "recurring_errors": [\n' +
+'    "List each detected pattern with actual examples from the conversation\n' +
+'    "Format: \'[Error type]: [Exact example from chat] (appeared [N] times)\'\n' +
+'    "Examples: \'Past tense irregular verbs: \'\'I goed to store\'\' (appeared 3 times)\'\n' +
+'    "Examples: \'Missing articles: \'\'I want apple\'\' instead of \'\'I want an apple\'\' (appeared 2 times)\'\n' +
+'  ],\n' +
+'  "suggested_exercises": [\n' +
+'    {\n' +
+'      "title": "Targeted exercise name based on top error (e.g., \'Grammar Fix: Irregular Past Tense\'\n' +
+'      "description": "Explain exactly what this exercise addresses and why based on detected errors\n' +
+'      "difficulty": "Set based on user\'s apparent level (A1/B1/C1, etc.)\n' +
+'      "duration": "Realistic time (e.g., \'10-15 minutes\' for grammar drills, \'5-8 minutes\' for quick fixes\n' +
+'      "openingMessage": "Create SPECIFIC opening that directly addresses the error (e.g., \'Let\'s practice irregular past tense! I noticed you said \'\'goed\'\' earlier. The correct form is \'went\'. Let\'s practice more irregular verbs together.\'\n' +
+'    },\n' +
+'    {\n' +
+'      "title": "Additional targeted exercise for second most common error\n' +
+'      "description": "Description\n' +
+'      "difficulty": "Level\n' +
+'      "duration": "Time\n' +
+'      "openingMessage": "Opening message\n' +
+'    }\n' +
+'  ]\n' +
+'}\n\n' +
+'EXERCISE CREATION RULES:\n' +
+'1. ALWAYS base exercises on specific errors detected in the conversation\n' +
+'2. Each exercise title should clearly identify the linguistic issue (e.g., "Grammar Fix: Past Tense", "Vocabulary Expansion", "Fluency: Linking Ideas")\n' +
+'3. Each openingMessage should reference the actual error and provide immediate practice\n' +
+'4. DO NOT create generic exercises like "Practice conversation" unless no specific errors were detected\n' +
+'5. Prioritize exercises based on error frequency: most frequent errors first\n' +
+'6. Adapt difficulty and duration to the user\'s apparent proficiency level\n\n' +
+'QUALITY CONTROL:\n' +
+'- Every analysis point must cite actual examples from the conversation\n' +
+'- Every improvement_area must correspond to a detected error\n' +
+'- Every recurring_error must include exact message quotes\n' +
+'- Every suggested_exercise must target a specific detected error\n' +
+'- BAN generic phrases like "Work on pronunciation" without specifics\n' +
+'- BAN template exercises that don\'t match actual conversation content\n' +
+'- If conversation was very short (< 3 messages), acknowledge limited data but still analyze what exists\n\n' +
+'IMPORTANT: If you detect no recurring errors, state that explicitly and suggest general fluency/conversation practice instead.\n\n' +
         'VOICE & STYLE\n' +
         '- Warm, motivating, zero sarcasm. Encourage risk-taking. One idea per turn. End with a tiny question or task.\n\n' +
         'SCOPE & GUARDRAILS\n' +

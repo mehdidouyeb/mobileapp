@@ -7,12 +7,65 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceChat } from '../context/VoiceChatContext';
 import { extractAnalysisFromResponse, generateDefaultAnalysis, analyzeMessages } from '../utils/analysisService';
+import { discussionStorage } from '../utils/discussionStorage';
+import { supabase } from '../utils/supabase';
+import { createUserStorage } from '../utils/userStorage';
 import styles from './Dashboard.module.css';
 
-export function Dashboard({ discussionId, onClose, onStartExercise, sessionDetails, onAnalysisUpdate }) {
+export function Dashboard({ discussionId, onClose, onStartExercise, sessionDetails, onAnalysisUpdate, user }) {
     const { messages } = useVoiceChat();
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [exercisesSaved, setExercisesSaved] = useState(false);
+
+    const handleSaveExercises = async () => {
+        if (!analysis || !analysis.suggestedExercises || analysis.suggestedExercises.length === 0) {
+            alert('Aucun exercice à sauvegarder');
+            return;
+        }
+
+        try {
+            if (user && user.id) {
+                // Utiliser UserStorage pour gérer les exercices
+                const userStorage = createUserStorage(user.id);
+                
+                // Charger les exercices existants
+                const savedCustomExercises = await userStorage.loadCustomExercises();
+                
+                // Ajouter les nouveaux exercices (éviter les doublons)
+                const newExercises = analysis.suggestedExercises.filter(newEx => 
+                    !savedCustomExercises.some(ex => ex.title === newEx.title)
+                );
+                
+                const updatedExercises = [...savedCustomExercises, ...newExercises];
+                
+                // Sauvegarder via UserStorage
+                await userStorage.saveCustomExercises(updatedExercises);
+                
+                alert(`✅ ${newExercises.length} exercice(s) sauvegardé(s) avec succès !`);
+            } else {
+                // Mode invité
+                const savedCustomExercises = JSON.parse(localStorage.getItem('customExercises') || '[]');
+                const newExercises = analysis.suggestedExercises.filter(newEx => 
+                    !savedCustomExercises.some(ex => ex.title === newEx.title)
+                );
+                const updatedExercises = [...savedCustomExercises, ...newExercises];
+                localStorage.setItem('customExercises', JSON.stringify(updatedExercises));
+                
+                alert(`✅ ${newExercises.length} exercice(s) sauvegardé(s) avec succès !`);
+            }
+            
+            setExercisesSaved(true);
+            
+            // Réinitialiser après 2 secondes
+            setTimeout(() => {
+                setExercisesSaved(false);
+            }, 2000);
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde des exercices:', error);
+            alert('Erreur lors de la sauvegarde des exercices');
+        }
+    };
 
     useEffect(() => {
         // Si on visualise les détails d'une session passée, utiliser ses données sauvegardées
@@ -228,10 +281,12 @@ export function Dashboard({ discussionId, onClose, onStartExercise, sessionDetai
                 {/* Actions */}
                 <div className={styles.actions}>
                     <button 
-                        onClick={() => alert('Exercices sauvegardés !')}
+                        onClick={handleSaveExercises}
                         className={styles.saveButton}
+                        disabled={exercisesSaved}
+                        style={exercisesSaved ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                     >
-                        💾 Sauvegarder les exercices
+                        {exercisesSaved ? '✅ Exercices sauvegardés !' : '💾 Sauvegarder les exercices'}
                     </button>
                     <button onClick={onClose} className={styles.closeButton}>
                         Fermer

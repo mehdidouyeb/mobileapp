@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { discussionStorage } from '../utils/discussionStorage.js';
 import styles from './Feedback.module.css';
 
@@ -66,19 +67,34 @@ export function Feedback() {
     }
 
     if (submitted) {
-        return (
-            <div className={styles.feedbackModal}>
+        return createPortal(
+            <div className={styles.feedbackModal} style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 99999
+            }}>
                 <div className={styles.feedbackContent}>
                     <div className={styles.successMessage}>
                         ✅ Thank you for your feedback!
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
-    return (
-        <div className={styles.feedbackModal}>
+    return createPortal(
+        <div className={styles.feedbackModal} style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999
+        }}>
             <div className={styles.feedbackContent}>
                 <h3>Rate This Discussion</h3>
 
@@ -136,6 +152,7 @@ export function Feedback() {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

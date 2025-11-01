@@ -4,23 +4,57 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useGemini } from '../hooks/useGemini';
+import { useAuth } from '../contexts/AuthContext';
+import { useConversations } from '../hooks/useConversations';
+import { ConversationList } from '../components/ConversationList';
+import { StarterPrompts } from '../components/StarterPrompts';
+import { router } from 'expo-router';
 
 export default function HomeScreen() {
   console.log('🚀 APP STARTED - Constants available:', !!Constants);
   console.log('🚀 ExpoConfig:', Constants?.expoConfig);
   console.log('🚀 Extra:', Constants?.expoConfig?.extra);
-  
+
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const languages = ['English', 'Spanish', 'French'];
-  const [history, setHistory] = useState<{ role: 'user' | 'ai' | 'system' | 'log'; text: string; ts: number }[]>([]);
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState<number>(5);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(false);
   const recognizedTextRef = useRef('');
+
+  const { signOut } = useAuth();
+  const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen);
+  const {
+    currentConversation,
+    messages,
+    createConversation,
+    addMessage,
+    loadMessages,
+    setCurrentConversation,
+    setMessages
+  } = useConversations();
+
+  const handleSignOut = async () => {
+    console.log('🚪 LOGOUT BUTTON PRESSED');
+    try {
+      const { error } = await signOut();
+      if (error) {
+        console.log('❌ LOGOUT ERROR:', error);
+        Alert.alert('Error', error.message);
+      } else {
+        console.log('✅ LOGOUT SUCCESSFUL - NAVIGATING TO AUTH');
+        router.replace('/auth');
+      }
+    } catch (err) {
+      console.log('💥 LOGOUT EXCEPTION:', err);
+      Alert.alert('Error', 'Failed to sign out');
+    }
+  };
 
   const appendLog = useCallback((msg: string) => {
     setLogs(prev => [new Date().toLocaleTimeString() + ' ' + msg, ...prev].slice(0, 200));
@@ -33,37 +67,26 @@ export default function HomeScreen() {
   }, [close]);
 
   const handleClearChat = useCallback(() => {
-    setHistory([]);
-  }, []);
+    setCurrentConversation(null);
+    setMessages([]);
+  }, [setCurrentConversation, setMessages]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const stored = await AsyncStorage.getItem('history');
-        if (stored) setHistory(JSON.parse(stored));
-      } catch {}
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await AsyncStorage.setItem('history', JSON.stringify(history.slice(0, 200)));
-      } catch {}
-    })();
-  }, [history]);
-
-  const onAIMessage = useCallback((evt: any) => {
+  const onAIMessage = useCallback(async (evt: any) => {
     appendLog('AI message received');
     const text = typeof evt === 'string' ? evt : (evt?.text ?? JSON.stringify(evt));
-    setHistory(prev => [{ role: 'ai', text, ts: Date.now() }, ...prev].slice(0, 200));
-  }, [appendLog]);
+
+    if (currentConversation) {
+      await addMessage(currentConversation.id, 'assistant', text);
+    }
+  }, [appendLog, currentConversation, addMessage]);
 
   const onAIError = useCallback((err: any) => {
     const msg = 'AI error: ' + (err?.message ?? String(err));
     appendLog(msg);
-    setHistory(prev => [{ role: 'log', text: msg, ts: Date.now() }, ...prev].slice(0, 200));
-  }, [appendLog]);
+    if (currentConversation) {
+      addMessage(currentConversation.id, 'system', msg);
+    }
+  }, [appendLog, currentConversation, addMessage]);
 
   const onAIClose = useCallback(() => {
     setIsConnected(false);
@@ -74,8 +97,6 @@ export default function HomeScreen() {
     setIsConnected(true);
     appendLog('AI session open');
   }, [appendLog]);
-
-  const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen);
 
   useSpeechRecognitionEvent('start', () => {
     appendLog('✅ Speech recognition started - speak now!');
@@ -93,10 +114,8 @@ export default function HomeScreen() {
     setIsRecording(false);
     const finalText = recognizedTextRef.current.trim();
     if (finalText) {
-      appendLog(`✉️ Sending: "${finalText}"`);
-      setHistory(prev => [{ role: 'user', text: finalText, ts: Date.now() }, ...prev].slice(0, 200));
-      sendTextInput(finalText);
-      recognizedTextRef.current = '';
+      appendLog(`✉️ Sending voice: "${finalText}"`);
+      handleVoiceMessage(finalText);
     } else {
       appendLog('⚠️ No text recognized');
     }
@@ -122,21 +141,146 @@ export default function HomeScreen() {
     }
   }, [isConnected, connect, close, appendLog, selectedLanguage]);
 
-  const handleReview = useCallback(() => {
+  const handleReview = useCallback(async () => {
     const prompt = `Please review my last utterance in ${selectedLanguage}. Identify mistakes and suggest corrections with brief explanations.`;
-    setHistory(prev => [{ role: 'user', text: prompt, ts: Date.now() }, ...prev].slice(0, 200));
+
+    // Create conversation if none exists
+    let conversation = currentConversation;
+    if (!conversation) {
+      conversation = await createConversation('Review Session', prompt);
+      if (!conversation) return;
+    }
+
+    // Auto-connect if not connected
+    if (!isConnected) {
+      try {
+        appendLog('🔗 Auto-connecting for review...');
+        await connect({
+          model: 'gemini-2.5-flash',
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+        });
+        appendLog('✅ Auto-connected for review');
+      } catch (e: any) {
+        appendLog('❌ Review auto-connect failed: ' + (e?.message ?? String(e)));
+        return;
+      }
+    }
+
+    // Save and send the review prompt
+    await addMessage(conversation.id, 'user', prompt);
     try {
       sendTextInput(prompt);
-    } catch (e) {}
-  }, [selectedLanguage, sendTextInput]);
+    } catch (e: any) {
+      appendLog('❌ Review send failed: ' + (e?.message ?? String(e)));
+    }
+  }, [selectedLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage]);
 
-  const handleSend = useCallback(() => {
+  const handleVoiceMessage = useCallback(async (text: string) => {
+    // Create conversation if none exists
+    let conversation = currentConversation;
+    if (!conversation) {
+      conversation = await createConversation('Voice Message', text);
+      if (!conversation) return;
+    }
+
+    // Auto-connect if not connected
+    if (!isConnected) {
+      try {
+        appendLog('🔗 Auto-connecting for voice message...');
+        await connect({
+          model: 'gemini-2.5-flash',
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+        });
+        appendLog('✅ Auto-connected for voice');
+      } catch (e: any) {
+        appendLog('❌ Voice auto-connect failed: ' + (e?.message ?? String(e)));
+        return;
+      }
+    }
+
+    // Save user message
+    await addMessage(conversation.id, 'user', text);
+    recognizedTextRef.current = '';
+
+    // Send to AI
+    try {
+      sendTextInput(text);
+    } catch (e: any) {
+      appendLog('❌ Voice send failed: ' + (e?.message ?? String(e)));
+    }
+  }, [currentConversation, isConnected, createConversation, connect, sendTextInput, selectedLanguage, appendLog, addMessage]);
+
+  const handleSend = useCallback(async () => {
     const text = message.trim();
     if (!text) return;
-    setHistory(prev => [{ role: 'user', text, ts: Date.now() }, ...prev].slice(0, 200));
+
+    // Create conversation if none exists
+    let conversation = currentConversation;
+    if (!conversation) {
+      conversation = await createConversation(text.substring(0, 50) + '...', text);
+      if (!conversation) return;
+    }
+
+    // Auto-connect if not connected
+    if (!isConnected) {
+      try {
+        appendLog('🔗 Auto-connecting to AI session...');
+        await connect({
+          model: 'gemini-2.5-flash',
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+        });
+        appendLog('✅ Auto-connected successfully');
+      } catch (e: any) {
+        appendLog('❌ Auto-connect failed: ' + (e?.message ?? String(e)));
+        Alert.alert('Connection Error', 'Failed to connect to AI. Please try again.');
+        return;
+      }
+    }
+
+    // Save user message
+    await addMessage(conversation.id, 'user', text);
+
+    // Send to AI
     setMessage('');
-    try { sendTextInput(text); } catch {}
-  }, [message, sendTextInput]);
+    try {
+      sendTextInput(text);
+    } catch (e: any) {
+      appendLog('❌ Send failed: ' + (e?.message ?? String(e)));
+    }
+  }, [isConnected, connect, sendTextInput, selectedLanguage, appendLog]);
+
+  const handleSelectConversation = useCallback(async (conversation: any) => {
+    setCurrentConversation(conversation);
+    await loadMessages(conversation.id);
+  }, [setCurrentConversation, loadMessages]);
+
+  const handleSelectStarterPrompt = useCallback(async (prompt: any) => {
+    // Create conversation with the prompt
+    const conversation = await createConversation(prompt.title, prompt.prompt);
+    if (conversation) {
+      // Auto-connect and send the prompt
+      if (!isConnected) {
+        try {
+          appendLog('🔗 Auto-connecting for starter prompt...');
+          await connect({
+            model: 'gemini-2.5-flash',
+            systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+          });
+          appendLog('✅ Auto-connected for starter prompt');
+        } catch (e: any) {
+          appendLog('❌ Starter prompt auto-connect failed: ' + (e?.message ?? String(e)));
+          return;
+        }
+      }
+
+      // Send the starter prompt to AI
+      try {
+        sendTextInput(prompt.prompt);
+      } catch (e: any) {
+        appendLog('❌ Starter prompt send failed: ' + (e?.message ?? String(e)));
+      }
+    }
+  }, [createConversation, isConnected, connect, sendTextInput, selectedLanguage, appendLog]);
 
   const handleVoiceInput = useCallback(async () => {
     if (!ExpoSpeechRecognitionModule) {
@@ -270,28 +414,40 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.title}>AI Coach</Text>
-        <View style={styles.langRow}>
-          {languages.map((lang) => (
-            <Pressable key={lang} style={[styles.chipSmall, selectedLanguage === lang && styles.chipSelected]} onPress={() => setSelectedLanguage(lang)}>
-              <Text style={styles.chipText}>{lang.slice(0,2)}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.headerLeft}>
+          <Pressable style={styles.menuButton} onPress={() => setShowConversationList(true)}>
+            <Text style={styles.menuText}>📋</Text>
+          </Pressable>
+          <Text style={styles.title}>Fluent Flo</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={styles.langRow}>
+            {languages.map((lang) => (
+              <Pressable key={lang} style={[styles.chipSmall, selectedLanguage === lang && styles.chipSelected]} onPress={() => setSelectedLanguage(lang)}>
+                <Text style={styles.chipText}>{lang.slice(0,2)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.logoutButton} onPress={handleSignOut}>
+            <Text style={styles.logoutText}>🚪</Text>
+          </Pressable>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.chatArea}>
-        {history.slice(0, 100).reverse().map((m, i) => (
-          <View key={i} style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
-            <Text style={styles.bubbleText}>{m.text}</Text>
-          </View>
-        ))}
+        {messages.length > 0 ? (
+          messages.map((msg, i) => (
+            <View key={msg.id || i} style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
+              <Text style={styles.bubbleText}>{msg.content}</Text>
+            </View>
+          ))
+        ) : (
+          <StarterPrompts onSelectPrompt={handleSelectStarterPrompt} />
+        )}
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Pressable style={styles.iconButton} onPress={handleToggleSession}>
-          <Text style={styles.iconText}>{isConnected ? '🔴' : '🟢'}</Text>
-        </Pressable>
+        {/* Session button hidden - auto-connect now */}
         <Pressable style={styles.iconButton} onPress={handleVoiceInput}>
           <Text style={styles.iconText}>{isRecording ? '⏹' : '🎤'}</Text>
         </Pressable>
@@ -377,6 +533,15 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      <ConversationList
+        visible={showConversationList}
+        onClose={() => {
+          console.log('🟥 CONVERSATION LIST onClose called - setting showConversationList to false');
+          setShowConversationList(false);
+        }}
+        onSelectConversation={handleSelectConversation}
+      />
     </SafeAreaView>
   );
 }
@@ -384,11 +549,17 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0b1020' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#1a1f3a', borderBottomWidth: 1, borderBottomColor: '#2a2f4a' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  menuButton: { padding: 8 },
+  menuText: { fontSize: 18 },
   title: { fontSize: 20, fontWeight: '700', color: 'white' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   langRow: { flexDirection: 'row', gap: 6 },
   chipSmall: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 9999, backgroundColor: '#374151' },
   chipSelected: { backgroundColor: '#2563EB' },
   chipText: { color: 'white', fontSize: 12, fontWeight: '600' },
+  logoutButton: { padding: 8 },
+  logoutText: { fontSize: 18 },
   chatArea: { padding: 16, gap: 8 },
   bubble: { maxWidth: '80%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16 },
   bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#2563EB' },

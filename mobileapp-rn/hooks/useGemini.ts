@@ -18,7 +18,7 @@ export function useGemini(
     clientRef.current = {
       apiKey,
       model: options?.model ?? 'gemini-2.5-flash',
-      systemInstruction: options?.systemInstruction ?? 'You are an AI language coach. Hold concise, friendly voice conversations.',
+      systemInstruction: options?.systemInstruction ?? 'You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations.',
     };
     sessionRef.current = { connected: true };
     if (onOpen) onOpen();

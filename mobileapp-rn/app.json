@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobileapp-rn",
-    "slug": "mobileapp-rn",
+    "name": "Fluent Flo",
+    "slug": "fluent-flo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

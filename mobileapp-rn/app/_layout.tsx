@@ -4,21 +4,43 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+
+function RootLayoutNav() {
+  const { user, loading } = useAuth();
+
+  console.log('🎯 LAYOUT RENDER - user:', user?.email || 'null', 'loading:', loading);
+
+  if (loading) {
+    return null; // Or show a loading screen
+  }
+
+  return (
+    <ThemeProvider value={DefaultTheme}>
+      <Stack>
+        {user ? (
+          <>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </>
+        ) : (
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+        )}
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+}
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }

@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView, ScrollView, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, SafeAreaView, ScrollView, TextInput, Platform, Alert, Modal } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useGemini } from '../hooks/useGemini';
 
 export default function HomeScreen() {
+  console.log('🚀 APP STARTED - Constants available:', !!Constants);
+  console.log('🚀 ExpoConfig:', Constants?.expoConfig);
+  console.log('🚀 Extra:', Constants?.expoConfig?.extra);
+  
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -14,6 +18,8 @@ export default function HomeScreen() {
   const [history, setHistory] = useState<{ role: 'user' | 'ai' | 'system' | 'log'; text: string; ts: number }[]>([]);
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState<number>(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const recognizedTextRef = useRef('');
 
   const appendLog = useCallback((msg: string) => {
@@ -174,41 +180,92 @@ export default function HomeScreen() {
   }, [isRecording, selectedLanguage, appendLog]);
 
   const handleSubmitReview = useCallback(async () => {
+    console.log('🎯 FEEDBACK SUBMIT FUNCTION CALLED');
+    console.log('🎯 FEEDBACK SUBMIT STARTED');
+    
+    // Log what Constants actually contains
+    console.log('📋 Constants object:', Constants);
+    console.log('📋 expoConfig:', Constants?.expoConfig);
+    console.log('📋 extra:', Constants?.expoConfig?.extra);
+    
     const url = (Constants?.expoConfig?.extra as any)?.SUPABASE_URL as string | undefined;
     const anon = (Constants?.expoConfig?.extra as any)?.SUPABASE_ANON_KEY as string | undefined;
-    if (!url || !anon) {
-      appendLog('Supabase not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in app.json extra.');
+    
+    console.log('🔍 URL value:', url);
+    console.log('🔍 KEY value:', anon ? anon.substring(0, 20) + '...' : 'undefined');
+    
+    appendLog(`🔍 DEBUG - URL loaded: ${url ? 'YES (' + url.substring(0, 30) + '...)' : 'NO'}`);
+    appendLog(`🔍 DEBUG - Key loaded: ${anon ? 'YES (' + anon.substring(0, 10) + '...)' : 'NO'}`);
+    
+    console.log('🔍 URL:', url ? 'LOADED' : 'MISSING');
+    console.log('🔍 KEY:', anon ? 'LOADED' : 'MISSING');
+    
+    if (!url || !anon || url.includes('REPLACE_WITH') || anon.includes('REPLACE_WITH') || url.includes('your_new') || anon.includes('your_new')) {
+      appendLog('❌ ERROR: Invalid configuration - keys not properly set in .env');
+      console.log('❌ CONFIG ERROR DETECTED');
+      Alert.alert('Configuration Error', 'Please set proper API keys in .env file');
       return;
     }
+    
+    if (!feedbackComment.trim()) {
+      Alert.alert('Missing Comment', 'Please add a comment with your feedback');
+      return;
+    }
+    
     const table = 'reviews';
     const payload = {
       rating,
-      comment: '',
-      language: selectedLanguage,
-      platform: Platform.OS,
+      comment: feedbackComment.trim(),
       created_at: new Date().toISOString(),
     };
+    
+    appendLog(`📤 Sending feedback: ${rating} stars, "${feedbackComment.substring(0, 30)}..."`);
+    
     try {
-      const res = await fetch(`${url}/rest/v1/${table}`, {
+      const fullUrl = `${url}/rest/v1/${table}`;
+      console.log('🌐 FULL REQUEST URL:', fullUrl);
+      console.log('📤 REQUEST PAYLOAD:', JSON.stringify(payload, null, 2));
+      
+      appendLog(`🎯 Target URL: ${fullUrl}`);
+      
+      const res = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: anon,
           Authorization: `Bearer ${anon}`,
-          Prefer: 'return=representation',
+          Prefer: 'return=minimal',
         },
         body: JSON.stringify(payload),
       });
+      
+      console.log('📊 RESPONSE STATUS:', res.status);
+      console.log('📊 RESPONSE STATUS TEXT:', res.statusText);
+      console.log('📊 RESPONSE HEADERS:', Object.fromEntries(res.headers.entries()));
+      
+      appendLog(`📊 Response status: ${res.status} ${res.statusText}`);
+      
       if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`Supabase HTTP ${res.status}: ${txt}`);
+        const errText = await res.text();
+        console.log('❌ ERROR RESPONSE BODY:', errText);
+        appendLog(`❌ Supabase error ${res.status}: ${errText}`);
+        Alert.alert('Submission Failed', `Server error ${res.status}: ${errText.substring(0, 100)}`);
+      } else {
+        console.log('✅ REQUEST SUCCESSFUL');
+        appendLog('✅ Feedback submitted successfully!');
+        Alert.alert('Success', 'Thank you for your feedback!');
+        setShowFeedbackModal(false);
+        setRating(5);
+        setFeedbackComment('');
       }
-      setRating(5);
-      appendLog('Review submitted. Thank you!');
     } catch (e: any) {
-      appendLog('Submit review error: ' + (e?.message ?? String(e)));
+      console.log('💥 NETWORK ERROR:', e);
+      console.log('💥 ERROR MESSAGE:', e?.message);
+      console.log('💥 ERROR STACK:', e?.stack);
+      appendLog(`❌ Network error: ${e?.message ?? String(e)}`);
+      Alert.alert('Network Error', `Failed to connect: ${e?.message ?? 'Check your internet connection'}`);
     }
-  }, [rating, selectedLanguage, appendLog]);
+  }, [rating, feedbackComment, appendLog]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -261,10 +318,65 @@ export default function HomeScreen() {
         <Pressable style={styles.smallButton} onPress={handleClearChat}>
           <Text style={styles.smallButtonText}>Clear</Text>
         </Pressable>
-        <Pressable style={styles.smallButton} onPress={handleSubmitReview}>
-          <Text style={styles.smallButtonText}>⭐{rating}</Text>
+        <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
+          <Text style={styles.smallButtonText}>💬 Feedback</Text>
         </Pressable>
       </View>
+
+      <Modal
+        visible={showFeedbackModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeedbackModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Share Your Feedback</Text>
+            
+            <Text style={styles.ratingLabel}>Rate your experience:</Text>
+            <View style={styles.starsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Pressable
+                  key={star}
+                  onPress={() => setRating(star)}
+                  style={styles.starButton}
+                >
+                  <Text style={styles.starText}>
+                    {star <= rating ? '⭐' : '☆'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            
+            <Text style={styles.commentLabel}>Comments:</Text>
+            <TextInput
+              style={styles.commentInput}
+              value={feedbackComment}
+              onChangeText={setFeedbackComment}
+              placeholder="Tell us what you think..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowFeedbackModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={handleSubmitReview}
+              >
+                <Text style={styles.modalButtonText}>Submit</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -288,7 +400,21 @@ const styles = StyleSheet.create({
   chatInput: { flex: 1, backgroundColor: '#111827', color: 'white', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, fontSize: 15 },
   sendButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2563EB', borderRadius: 20 },
   sendButtonText: { color: 'white', fontSize: 20, fontWeight: '700' },
-  extraControls: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#0f1428', gap: 8, justifyContent: 'space-around' },
-  smallButton: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: '#374151', borderRadius: 8 },
-  smallButtonText: { color: 'white', fontSize: 12, fontWeight: '600' },
+  extraControls: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 8, backgroundColor: '#0b1020' },
+  smallButton: { flex: 1, paddingVertical: 8, backgroundColor: '#374151', borderRadius: 8, alignItems: 'center' },
+  smallButtonText: { color: 'white', fontSize: 13, fontWeight: '600' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#1a1f3a', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
+  modalTitle: { fontSize: 22, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' },
+  ratingLabel: { fontSize: 16, color: '#D1D5DB', marginBottom: 12, fontWeight: '600' },
+  starsContainer: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
+  starButton: { padding: 4 },
+  starText: { fontSize: 36 },
+  commentLabel: { fontSize: 16, color: '#D1D5DB', marginBottom: 8, fontWeight: '600' },
+  commentInput: { backgroundColor: '#0b1020', color: 'white', borderRadius: 8, padding: 12, fontSize: 15, minHeight: 100, borderWidth: 1, borderColor: '#374151', marginBottom: 24 },
+  modalButtons: { flexDirection: 'row', gap: 12 },
+  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  cancelButton: { backgroundColor: '#374151' },
+  submitButton: { backgroundColor: '#2563EB' },
+  modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });

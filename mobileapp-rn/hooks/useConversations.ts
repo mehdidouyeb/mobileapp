@@ -178,7 +178,34 @@ export function useConversations() {
       }
       console.log('🎯 STARTER PROMPTS RAW DATA:', data);
       console.log('🎯 Loaded starter prompts:', data?.length || 0);
-      setStarterPrompts(data || []);
+
+      // If no data from database, use fallback
+      if (!data || data.length === 0) {
+        console.log('🎯 Using fallback starter prompts');
+        const fallbackPrompts = [
+          {
+            id: 'fallback-1',
+            title: 'Daily Routine',
+            prompt: 'Tell me about your daily routine. What time do you wake up, what do you do during the day, and how do you spend your evenings?',
+            category: 'lifestyle',
+            difficulty: 'beginner' as const,
+            language: 'en',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'fallback-2',
+            title: 'Travel Stories',
+            prompt: 'Describe your favorite travel destination. What did you like most about it and why would you recommend it to others?',
+            category: 'travel',
+            difficulty: 'intermediate' as const,
+            language: 'en',
+            created_at: new Date().toISOString()
+          }
+        ];
+        setStarterPrompts(fallbackPrompts);
+      } else {
+        setStarterPrompts(data || []);
+      }
     } catch (error) {
       console.error('❌ ERROR LOADING STARTER PROMPTS:', error);
     }

@@ -9,11 +9,15 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 function RootLayoutNav() {
   const { user, loading } = useAuth();
 
-  console.log('🎯 LAYOUT RENDER - user:', user?.email || 'null', 'loading:', loading);
+  console.log('🎯 LAYOUT RENDER - user:', user?.email || 'null', 'loading:', loading, 'timestamp:', Date.now());
+  console.log('🎯 LAYOUT RENDER - user exists:', !!user);
 
   if (loading) {
+    console.log('🎯 LAYOUT: Still loading, showing nothing');
     return null; // Or show a loading screen
   }
+
+  console.log('🎯 LAYOUT: Loading complete, user present:', !!user, 'will show:', user ? 'MAIN APP' : 'LOGIN');
 
   return (
     <ThemeProvider value={DefaultTheme}>

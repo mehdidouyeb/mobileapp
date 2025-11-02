@@ -19,11 +19,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('🔐 AUTH PROVIDER RENDER - user:', user, 'loading:', loading);
+
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    console.log('🔐 AUTH PROVIDER useEffect STARTING');
+
+    // Force sign out on app start to always go to login
+    console.log('🔐 FORCING SIGN OUT ON APP START');
+    supabase.auth.signOut().then(() => {
+      console.log('🔐 SIGN OUT COMPLETE - SETTING STATE');
+      setUser(null);
+      setSession(null);
+      setLoading(false);
+    }).catch((error) => {
+      console.log('🔐 SIGN OUT ERROR:', error);
+      setUser(null);
+      setSession(null);
       setLoading(false);
     });
 
@@ -39,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           try {
             const { error } = await supabase
-              .from('profiles')
+              .from('user_profiles')
               .upsert({
                 id: session.user.id,
                 email: session.user.email,
@@ -53,7 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string) => {

@@ -506,6 +506,21 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      <View style={styles.extraControls}>
+        <Pressable style={styles.smallButton} onPress={handleReview}>
+          <Text style={styles.smallButtonText}>Review</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={handleResetSession}>
+          <Text style={styles.smallButtonText}>Reset</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={handleClearChat}>
+          <Text style={styles.smallButtonText}>Clear</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
+          <Text style={styles.smallButtonText}>💬 Feedback</Text>
+        </Pressable>
+      </View>
+
       <ScrollView contentContainerStyle={styles.chatArea}>
         {messages.length > 0 ? (
           messages.map((msg, i) => (
@@ -514,7 +529,7 @@ export default function HomeScreen() {
             </View>
           ))
         ) : (
-          console.log('🎯 Showing starter prompts, messages.length:', messages.length) || <StarterPrompts onSelectPrompt={handleSelectStarterPrompt} />
+          console.log('🎯 Showing starter prompts, messages.length:', messages.length, 'messages:', messages) || <StarterPrompts onSelectPrompt={handleSelectStarterPrompt} />
         )}
       </ScrollView>
 
@@ -534,21 +549,6 @@ export default function HomeScreen() {
         />
         <Pressable style={styles.sendButton} onPress={() => handleSend('button')}>
           <Text style={styles.sendButtonText}>➤</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.extraControls}>
-        <Pressable style={styles.smallButton} onPress={handleReview}>
-          <Text style={styles.smallButtonText}>Review</Text>
-        </Pressable>
-        <Pressable style={styles.smallButton} onPress={handleResetSession}>
-          <Text style={styles.smallButtonText}>Reset</Text>
-        </Pressable>
-        <Pressable style={styles.smallButton} onPress={handleClearChat}>
-          <Text style={styles.smallButtonText}>Clear</Text>
-        </Pressable>
-        <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
-          <Text style={styles.smallButtonText}>💬 Feedback</Text>
         </Pressable>
       </View>
 

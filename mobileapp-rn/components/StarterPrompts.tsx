@@ -15,7 +15,22 @@ interface StarterPromptsProps {
 export function StarterPrompts({ onSelectPrompt }: StarterPromptsProps) {
   const { starterPrompts } = useConversations();
 
-  console.log('🎯 StarterPrompts component rendering, prompts:', starterPrompts?.length || 0);
+  console.log('🎯 StarterPrompts component rendering');
+  console.log('🎯 starterPrompts array:', starterPrompts);
+  console.log('🎯 starterPrompts length:', starterPrompts?.length || 0);
+
+  if (!starterPrompts || starterPrompts.length === 0) {
+    console.log('🎯 NO STARTER PROMPTS - showing fallback');
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome to Fluent Flo! 🎓</Text>
+        <Text style={styles.subtitle}>Loading conversation starters...</Text>
+        <Text style={{ color: 'white', marginTop: 20 }}>No starter prompts available yet.</Text>
+      </View>
+    );
+  }
+
+  console.log('🎯 RENDERING STARTER PROMPTS:', starterPrompts.length);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

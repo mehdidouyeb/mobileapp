@@ -58,8 +58,12 @@ export function useConversations() {
 
   // Create new conversation
   const createConversation = useCallback(async (title: string, firstMessage?: string) => {
-    if (!user) return null;
+    if (!user) {
+      console.log('❌ CREATE CONVERSATION: No user');
+      return null;
+    }
 
+    console.log('📝 CREATING CONVERSATION:', title, 'with message:', firstMessage);
     try {
       const { data, error } = await supabase
         .from('chat_conversations')
@@ -70,19 +74,24 @@ export function useConversations() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ CREATE CONVERSATION ERROR:', error);
+        throw error;
+      }
 
+      console.log('✅ CONVERSATION CREATED:', data);
       setConversations(prev => [data, ...prev]);
       setCurrentConversation(data);
 
       // Add first message if provided
       if (firstMessage) {
+        console.log('💬 ADDING FIRST MESSAGE:', firstMessage);
         await addMessage(data.id, 'user', firstMessage);
       }
 
       return data;
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      console.error('❌ ERROR CREATING CONVERSATION:', error);
       return null;
     }
   }, [user]);
@@ -156,16 +165,22 @@ export function useConversations() {
   // Load starter prompts
   const [starterPrompts, setStarterPrompts] = useState<StarterPrompt[]>([]);
   const loadStarterPrompts = useCallback(async () => {
+    console.log('🎯 LOADING STARTER PROMPTS...');
     try {
       const { data, error } = await supabase
         .from('conversation_starters')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ STARTER PROMPTS ERROR:', error);
+        throw error;
+      }
+      console.log('🎯 STARTER PROMPTS RAW DATA:', data);
+      console.log('🎯 Loaded starter prompts:', data?.length || 0);
       setStarterPrompts(data || []);
     } catch (error) {
-      console.error('Error loading starter prompts:', error);
+      console.error('❌ ERROR LOADING STARTER PROMPTS:', error);
     }
   }, []);
 

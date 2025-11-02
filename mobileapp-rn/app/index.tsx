@@ -26,8 +26,59 @@ export default function HomeScreen() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
   const recognizedTextRef = useRef('');
+  const voiceProcessedRef = useRef(false);
 
   const { signOut } = useAuth();
+
+  const appendLog = useCallback((msg: string) => {
+    setLogs(prev => [new Date().toLocaleTimeString() + ' ' + msg, ...prev].slice(0, 200));
+  }, []);
+
+  // Refs for dependencies that aren't available yet
+  const currentConversationRef = useRef<any>(null);
+  const addMessageRef = useRef<any>(null);
+
+  // Define callbacks with refs
+  const onAIMessage = useCallback(async (evt: any) => {
+    const timestamp = Date.now();
+    console.log(`🤖 [${timestamp}] AI MESSAGE RECEIVED:`, evt);
+    console.log(`🤖 [${timestamp}] Current conversation:`, currentConversationRef.current?.id);
+    appendLog('AI message received');
+    const text = typeof evt === 'string' ? evt : (evt?.text ?? JSON.stringify(evt));
+
+    if (currentConversationRef.current && addMessageRef.current) {
+      console.log(`🤖 [${timestamp}] Adding message to conversation:`, currentConversationRef.current.id);
+      await addMessageRef.current(currentConversationRef.current.id, 'assistant', text);
+      console.log(`🤖 [${timestamp}] Message added successfully`);
+    } else {
+      console.log(`🤖 [${timestamp}] Refs not ready - conversation:`, !!currentConversationRef.current, 'addMessage:', !!addMessageRef.current);
+    }
+  }, [appendLog]);
+
+  const onAIError = useCallback((err: any) => {
+    const timestamp = Date.now();
+    console.log(`❌ [${timestamp}] AI ERROR:`, err);
+    const msg = 'AI error: ' + (err?.message ?? String(err));
+    appendLog(msg);
+    if (currentConversationRef.current && addMessageRef.current) {
+      addMessageRef.current(currentConversationRef.current.id, 'system', msg);
+    }
+  }, [appendLog]);
+
+  const onAIClose = useCallback(() => {
+    const timestamp = Date.now();
+    console.log(`🔌 [${timestamp}] AI CONNECTION CLOSED`);
+    setIsConnected(false);
+    appendLog('AI session closed');
+  }, [appendLog]);
+
+  const onAIOpen = useCallback(() => {
+    const timestamp = Date.now();
+    console.log(`🔌 [${timestamp}] AI CONNECTION OPENED`);
+    setIsConnected(true);
+    appendLog('AI session open');
+  }, [appendLog]);
+
   const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen);
   const {
     currentConversation,
@@ -38,6 +89,12 @@ export default function HomeScreen() {
     setCurrentConversation,
     setMessages
   } = useConversations();
+
+  // Update refs when hooks become available
+  useEffect(() => {
+    currentConversationRef.current = currentConversation;
+    addMessageRef.current = addMessage;
+  }, [currentConversation, addMessage]);
 
   const handleSignOut = async () => {
     console.log('🚪 LOGOUT BUTTON PRESSED');
@@ -56,10 +113,6 @@ export default function HomeScreen() {
     }
   };
 
-  const appendLog = useCallback((msg: string) => {
-    setLogs(prev => [new Date().toLocaleTimeString() + ' ' + msg, ...prev].slice(0, 200));
-  }, []);
-
   const handleResetSession = useCallback(() => {
     try { close(); } catch {}
     setIsConnected(false);
@@ -71,35 +124,10 @@ export default function HomeScreen() {
     setMessages([]);
   }, [setCurrentConversation, setMessages]);
 
-  const onAIMessage = useCallback(async (evt: any) => {
-    appendLog('AI message received');
-    const text = typeof evt === 'string' ? evt : (evt?.text ?? JSON.stringify(evt));
-
-    if (currentConversation) {
-      await addMessage(currentConversation.id, 'assistant', text);
-    }
-  }, [appendLog, currentConversation, addMessage]);
-
-  const onAIError = useCallback((err: any) => {
-    const msg = 'AI error: ' + (err?.message ?? String(err));
-    appendLog(msg);
-    if (currentConversation) {
-      addMessage(currentConversation.id, 'system', msg);
-    }
-  }, [appendLog, currentConversation, addMessage]);
-
-  const onAIClose = useCallback(() => {
-    setIsConnected(false);
-    appendLog('AI session closed');
-  }, [appendLog]);
-
-  const onAIOpen = useCallback(() => {
-    setIsConnected(true);
-    appendLog('AI session open');
-  }, [appendLog]);
-
   useSpeechRecognitionEvent('start', () => {
     appendLog('✅ Speech recognition started - speak now!');
+    voiceProcessedRef.current = false; // Reset processing flag
+    console.log('🎤 VOICE START - reset processed flag to false');
   });
 
   useSpeechRecognitionEvent('result', (event: any) => {
@@ -113,8 +141,20 @@ export default function HomeScreen() {
     appendLog('⏹ Speech recognition ended');
     setIsRecording(false);
     const finalText = recognizedTextRef.current.trim();
+
+    console.log('🎤 VOICE END - processed flag:', voiceProcessedRef.current, 'text:', finalText);
+
+    // Prevent duplicate processing
+    if (voiceProcessedRef.current) {
+      appendLog('⚠️ Voice already processed, skipping');
+      console.log('⚠️ VOICE DUPLICATE PREVENTED');
+      return;
+    }
+
     if (finalText) {
       appendLog(`✉️ Sending voice: "${finalText}"`);
+      console.log('🎤 SETTING VOICE PROCESSED FLAG TO TRUE');
+      voiceProcessedRef.current = true;
       handleVoiceMessage(finalText);
     } else {
       appendLog('⚠️ No text recognized');
@@ -176,16 +216,23 @@ export default function HomeScreen() {
   }, [selectedLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage]);
 
   const handleVoiceMessage = useCallback(async (text: string) => {
+    console.log('🎤 HANDLING VOICE MESSAGE:', text);
+
     // Create conversation if none exists
     let conversation = currentConversation;
     if (!conversation) {
+      console.log('🎤 Creating conversation for voice message');
       conversation = await createConversation('Voice Message', text);
-      if (!conversation) return;
+      if (!conversation) {
+        console.log('❌ Failed to create conversation for voice');
+        return;
+      }
     }
 
     // Auto-connect if not connected
     if (!isConnected) {
       try {
+        console.log('🔗 Connecting to AI for voice message');
         appendLog('🔗 Auto-connecting for voice message...');
         await connect({
           model: 'gemini-2.5-flash',
@@ -193,32 +240,52 @@ export default function HomeScreen() {
         });
         appendLog('✅ Auto-connected for voice');
       } catch (e: any) {
+        console.log('❌ Voice connect error:', e);
         appendLog('❌ Voice auto-connect failed: ' + (e?.message ?? String(e)));
         return;
       }
     }
 
     // Save user message
+    console.log('💾 Saving voice message to DB');
     await addMessage(conversation.id, 'user', text);
     recognizedTextRef.current = '';
 
     // Send to AI
     try {
+      console.log('📤 Sending voice text to AI:', text);
       sendTextInput(text);
     } catch (e: any) {
+      console.log('❌ Voice send error:', e);
       appendLog('❌ Voice send failed: ' + (e?.message ?? String(e)));
     }
   }, [currentConversation, isConnected, createConversation, connect, sendTextInput, selectedLanguage, appendLog, addMessage]);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(async (source = 'unknown') => {
+    const timestamp = Date.now();
+    console.log(`📤 [${timestamp}] handleSend called from: ${source}`);
+    console.log(`📤 [${timestamp}] Current message state:`, message);
+    console.log(`📤 [${timestamp}] Message length:`, message.length);
+
     const text = message.trim();
-    if (!text) return;
+    console.log(`📤 [${timestamp}] Trimmed text:`, text);
+
+    if (!text) {
+      console.log(`📤 [${timestamp}] NO TEXT - returning early`);
+      return;
+    }
+
+    console.log(`📤 [${timestamp}] TEXT FOUND - proceeding with:`, text);
 
     // Create conversation if none exists
     let conversation = currentConversation;
     if (!conversation) {
+      console.log('📤 handleSend: no current conversation, creating one');
       conversation = await createConversation(text.substring(0, 50) + '...', text);
-      if (!conversation) return;
+      if (!conversation) {
+        console.log('📤 handleSend: failed to create conversation');
+        return;
+      }
     }
 
     // Auto-connect if not connected
@@ -240,18 +307,23 @@ export default function HomeScreen() {
     // Save user message
     await addMessage(conversation.id, 'user', text);
 
-    // Send to AI
+    // Clear input and send to AI
     setMessage('');
     try {
+      const timestamp = Date.now();
+      console.log(`📤 [${timestamp}] SENDING TEXT TO AI:`, text);
       sendTextInput(text);
     } catch (e: any) {
+      console.log('❌ TEXT SEND ERROR:', e);
       appendLog('❌ Send failed: ' + (e?.message ?? String(e)));
     }
-  }, [isConnected, connect, sendTextInput, selectedLanguage, appendLog]);
+  }, [message, currentConversation, isConnected, createConversation, connect, sendTextInput, selectedLanguage, appendLog, addMessage]);
 
   const handleSelectConversation = useCallback(async (conversation: any) => {
+    console.log('📂 Selecting conversation:', conversation?.title, 'ID:', conversation?.id);
     setCurrentConversation(conversation);
     await loadMessages(conversation.id);
+    console.log('📂 Messages loaded for conversation');
   }, [setCurrentConversation, loadMessages]);
 
   const handleSelectStarterPrompt = useCallback(async (prompt: any) => {
@@ -442,7 +514,7 @@ export default function HomeScreen() {
             </View>
           ))
         ) : (
-          <StarterPrompts onSelectPrompt={handleSelectStarterPrompt} />
+          console.log('🎯 Showing starter prompts, messages.length:', messages.length) || <StarterPrompts onSelectPrompt={handleSelectStarterPrompt} />
         )}
       </ScrollView>
 
@@ -457,9 +529,10 @@ export default function HomeScreen() {
           onChangeText={setMessage}
           placeholder="Type your message..."
           placeholderTextColor="#9CA3AF"
-          onSubmitEditing={handleSend}
+          multiline={false}
+          blurOnSubmit={false}
         />
-        <Pressable style={styles.sendButton} onPress={handleSend}>
+        <Pressable style={styles.sendButton} onPress={() => handleSend('button')}>
           <Text style={styles.sendButtonText}>➤</Text>
         </Pressable>
       </View>

@@ -15,6 +15,8 @@ interface StarterPromptsProps {
 export function StarterPrompts({ onSelectPrompt }: StarterPromptsProps) {
   const { starterPrompts } = useConversations();
 
+  console.log('🎯 StarterPrompts component rendering, prompts:', starterPrompts?.length || 0);
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'beginner': return '#10B981'; // green

@@ -186,7 +186,7 @@ export function useConversations() {
           {
             id: 'fallback-1',
             title: 'Daily Routine',
-            prompt: 'Tell me about your daily routine. What time do you wake up, what do you do during the day, and how do you spend your evenings?',
+            prompt: 'I\'d love to hear about your daily routine. What time do you usually wake up in the morning?',
             category: 'lifestyle',
             difficulty: 'beginner' as const,
             language: 'en',
@@ -194,10 +194,28 @@ export function useConversations() {
           },
           {
             id: 'fallback-2',
-            title: 'Travel Stories',
-            prompt: 'Describe your favorite travel destination. What did you like most about it and why would you recommend it to others?',
+            title: 'Travel Dreams',
+            prompt: 'If you could travel anywhere right now, where would you go and what would you do there?',
             category: 'travel',
             difficulty: 'intermediate' as const,
+            language: 'en',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'fallback-3',
+            title: 'Weekend Plans',
+            prompt: 'What are you planning to do this weekend? Any special activities or relaxation?',
+            category: 'lifestyle',
+            difficulty: 'beginner' as const,
+            language: 'en',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'fallback-4',
+            title: 'Favorite Hobby',
+            prompt: 'What\'s a hobby or activity you really enjoy? Tell me what you like about it.',
+            category: 'interests',
+            difficulty: 'beginner' as const,
             language: 'en',
             created_at: new Date().toISOString()
           }

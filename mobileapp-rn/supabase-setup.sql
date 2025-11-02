@@ -4,6 +4,8 @@ CREATE TABLE user_profiles (
   email TEXT,
   full_name TEXT,
   avatar_url TEXT,
+  preferred_language TEXT DEFAULT 'en',
+  target_language TEXT DEFAULT 'en',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

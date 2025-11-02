@@ -6,9 +6,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error?: any }>;
+  preferredLanguage: string;
+  targetLanguage: string;
+  signUp: (email: string, password: string, preferredLanguage?: string, targetLanguage?: string) => Promise<{ error?: any }>;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signOut: () => Promise<{ error?: any }>;
+  updateLanguages: (preferred: string, target: string) => Promise<{ error?: any }>;
   resetPassword: (email: string) => Promise<{ error?: any }>;
 }
 
@@ -18,6 +21,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [preferredLanguage, setPreferredLanguage] = useState<string>('en');
+  const [targetLanguage, setTargetLanguage] = useState<string>('en');
 
   console.log('🔐 AUTH PROVIDER RENDER - user:', user, 'loading:', loading);
 
@@ -49,16 +54,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Create/update user profile when user signs up or signs in
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           try {
-            const { error } = await supabase
+            // First try to get existing profile
+            const { data: existingProfile } = await supabase
               .from('user_profiles')
-              .upsert({
-                id: session.user.id,
-                email: session.user.email,
-                updated_at: new Date().toISOString(),
-              });
-            if (error) console.error('Error updating profile:', error);
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (existingProfile) {
+              // Load existing language preferences
+              setPreferredLanguage(existingProfile.preferred_language || 'en');
+              setTargetLanguage(existingProfile.target_language || 'en');
+            } else {
+              // Create new profile with default languages
+              const { error } = await supabase
+                .from('user_profiles')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  preferred_language: 'en',
+                  target_language: 'en',
+                  updated_at: new Date().toISOString(),
+                });
+              if (error) console.error('Error creating profile:', error);
+              setPreferredLanguage('en');
+              setTargetLanguage('en');
+            }
           } catch (error) {
-            console.error('Error creating profile:', error);
+            console.error('Error managing profile:', error);
+            setPreferredLanguage('en');
+            setTargetLanguage('en');
           }
         }
       }
@@ -69,11 +94,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, preferredLanguage = 'en', targetLanguage = 'en') => {
+    setPreferredLanguage(preferredLanguage);
+    setTargetLanguage(targetLanguage);
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
+    return { error };
+  };
+
+  const updateLanguages = async (preferred: string, target: string) => {
+    if (!user) return { error: 'No user logged in' };
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({
+        preferred_language: preferred,
+        target_language: target,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (!error) {
+      setPreferredLanguage(preferred);
+      setTargetLanguage(target);
+    }
+
     return { error };
   };
 
@@ -95,13 +142,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     loading,
+    preferredLanguage,
+    targetLanguage,
     signUp,
     signIn,
     signOut,
+    updateLanguages,
     resetPassword,
   };
 

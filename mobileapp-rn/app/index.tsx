@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, SafeAreaView, ScrollView, TextInput,
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import * as Speech from 'expo-speech';
 import { useGemini } from '../hooks/useGemini';
 import { useAuth } from '../contexts/AuthContext';
 import { useConversations } from '../hooks/useConversations';
@@ -24,14 +25,32 @@ export default function HomeScreen() {
   const [rating, setRating] = useState<number>(5);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true); // Enable TTS by default
   const [showConversationList, setShowConversationList] = useState(false);
   const recognizedTextRef = useRef('');
   const voiceProcessedRef = useRef(false);
 
-  const { signOut } = useAuth();
-
   const appendLog = useCallback((msg: string) => {
     setLogs(prev => [new Date().toLocaleTimeString() + ' ' + msg, ...prev].slice(0, 200));
+  }, []);
+
+  // Helper function to convert language names to TTS language codes
+  const getLanguageCode = useCallback((language: string) => {
+    const languageMap: { [key: string]: string } = {
+      'English': 'en-US',
+      'Spanish': 'es-ES',
+      'French': 'fr-FR',
+      'German': 'de-DE',
+      'Italian': 'it-IT',
+      'Portuguese': 'pt-BR',
+      'Russian': 'ru-RU',
+      'Japanese': 'ja-JP',
+      'Korean': 'ko-KR',
+      'Chinese': 'zh-CN',
+      'Arabic': 'ar-SA',
+      'Hindi': 'hi-IN',
+    };
+    return languageMap[language] || 'en-US';
   }, []);
 
   // Refs for dependencies that aren't available yet
@@ -50,10 +69,25 @@ export default function HomeScreen() {
       console.log(`🤖 [${timestamp}] Adding message to conversation:`, currentConversationRef.current.id);
       await addMessageRef.current(currentConversationRef.current.id, 'assistant', text);
       console.log(`🤖 [${timestamp}] Message added successfully`);
+
+      // Speak the response if TTS is enabled
+      if (ttsEnabled && text) {
+        try {
+          console.log(`🔊 Speaking AI response:`, text.substring(0, 50) + '...');
+          await Speech.speak(text, {
+            language: getLanguageCode(selectedLanguage),
+            rate: 0.8, // Slightly slower for clarity
+            pitch: 1.0,
+          });
+        } catch (error) {
+          console.log('🔊 TTS Error:', error);
+          appendLog('🔊 TTS failed');
+        }
+      }
     } else {
       console.log(`🤖 [${timestamp}] Refs not ready - conversation:`, !!currentConversationRef.current, 'addMessage:', !!addMessageRef.current);
     }
-  }, [appendLog]);
+  }, [appendLog, ttsEnabled, selectedLanguage]);
 
   const onAIError = useCallback((err: any) => {
     const timestamp = Date.now();
@@ -79,7 +113,7 @@ export default function HomeScreen() {
     appendLog('AI session open');
   }, [appendLog]);
 
-  const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen);
+  const { signOut, preferredLanguage } = useAuth();
   const {
     currentConversation,
     messages,
@@ -87,8 +121,10 @@ export default function HomeScreen() {
     addMessage,
     loadMessages,
     setCurrentConversation,
-    setMessages
+    setMessages,
   } = useConversations();
+
+  const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen, preferredLanguage);
 
   // Update refs when hooks become available
   useEffect(() => {
@@ -327,32 +363,39 @@ export default function HomeScreen() {
   }, [setCurrentConversation, loadMessages]);
 
   const handleSelectStarterPrompt = useCallback(async (prompt: any) => {
-    // Create conversation with the prompt
-    const conversation = await createConversation(prompt.title, prompt.prompt);
+    // Create conversation with the prompt title
+    const conversation = await createConversation(prompt.title);
+
     if (conversation) {
-      // Auto-connect and send the prompt
+      // Send context instruction to Gemini to ask questions about the topic
+      const contextInstruction = `Let's practice talking about ${prompt.title.toLowerCase()}. Ask the user engaging questions to start a natural conversation about this topic. Be conversational and encouraging.`;
+
+      // Auto-connect and send the context instruction
       if (!isConnected) {
         try {
           appendLog('🔗 Auto-connecting for starter prompt...');
           await connect({
             model: 'gemini-2.5-flash',
-            systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+            systemInstruction: `You are Fluent Flo, an AI language learning assistant. Always respond in ${preferredLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`,
           });
-          appendLog('✅ Auto-connected for starter prompt');
         } catch (e: any) {
-          appendLog('❌ Starter prompt auto-connect failed: ' + (e?.message ?? String(e)));
+          console.log('❌ Auto-connect error:', e);
+          appendLog('❌ Auto-connect failed: ' + (e?.message ?? String(e)));
           return;
         }
       }
 
-      // Send the starter prompt to AI
+      // Save the context instruction as user message and send to Gemini
+      await addMessage(conversation.id, 'user', contextInstruction);
       try {
-        sendTextInput(prompt.prompt);
+        appendLog(`💬 Starting conversation about: ${prompt.title}`);
+        sendTextInput(contextInstruction);
       } catch (e: any) {
-        appendLog('❌ Starter prompt send failed: ' + (e?.message ?? String(e)));
+        console.log('❌ Starter prompt send error:', e);
+        appendLog('❌ Send failed: ' + (e?.message ?? String(e)));
       }
     }
-  }, [createConversation, isConnected, connect, sendTextInput, selectedLanguage, appendLog]);
+  }, [createConversation, isConnected, connect, addMessage, sendTextInput, appendLog, preferredLanguage]);
 
   const handleVoiceInput = useCallback(async () => {
     if (!ExpoSpeechRecognitionModule) {
@@ -516,6 +559,14 @@ export default function HomeScreen() {
         <Pressable style={styles.smallButton} onPress={handleClearChat}>
           <Text style={styles.smallButtonText}>Clear</Text>
         </Pressable>
+        <Pressable
+          style={[styles.smallButton, ttsEnabled && styles.ttsEnabled]}
+          onPress={() => setTtsEnabled(!ttsEnabled)}
+        >
+          <Text style={styles.smallButtonText}>
+            {ttsEnabled ? '🔊 TTS ON' : '🔇 TTS OFF'}
+          </Text>
+        </Pressable>
         <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
           <Text style={styles.smallButtonText}>💬 Feedback</Text>
         </Pressable>
@@ -661,4 +712,7 @@ const styles = StyleSheet.create({
   cancelButton: { backgroundColor: '#374151' },
   submitButton: { backgroundColor: '#2563EB' },
   modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  ttsEnabled: {
+    backgroundColor: '#10B981', // Green when enabled
+  },
 });

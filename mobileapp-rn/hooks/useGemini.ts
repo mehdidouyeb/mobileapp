@@ -5,7 +5,8 @@ export function useGemini(
   onMessage?: (event: any) => void,
   onError?: (error: any) => void,
   onClose?: () => void,
-  onOpen?: () => void
+  onOpen?: () => void,
+  preferredLanguage?: string
 ) {
   const sessionRef = useRef<any>(null);
   const clientRef = useRef<any>(null);
@@ -18,7 +19,7 @@ export function useGemini(
     clientRef.current = {
       apiKey,
       model: options?.model ?? 'gemini-1.5-flash', // Try 1.5-flash first
-      systemInstruction: options?.systemInstruction ?? 'You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations.',
+      systemInstruction: options?.systemInstruction ?? `You are Fluent Flo, an AI language learning assistant. Always respond in ${preferredLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`,
     };
     sessionRef.current = { connected: true };
     if (onOpen) onOpen();

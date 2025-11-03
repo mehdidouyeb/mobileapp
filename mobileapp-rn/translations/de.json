@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "Willkommen zurück",
+    "createAccount": "Konto erstellen",
+    "chooseLanguages": "Wählen Sie Ihre Sprachen"
+  },
+  "auth": {
+    "email": "E-Mail",
+    "password": "Passwort",
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "next": "Weiter",
+    "createAccount": "Konto erstellen",
+    "alreadyHaveAccount": "Haben Sie bereits ein Konto? Melden Sie sich an",
+    "dontHaveAccount": "Kein Konto? Registrieren Sie sich",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPassword": "Passwort-Reset-E-Mail gesendet!",
+    "accountCreated": "Konto erstellt! Sie können sich jetzt anmelden.",
+    "nativeLanguage": "Was ist Ihre Muttersprache?",
+    "targetLanguage": "Welche Sprache möchten Sie lernen?"
+  },
+  "chat": {
+    "typeMessage": "Geben Sie Ihre Nachricht ein...",
+    "send": "Senden",
+    "review": "Überprüfen",
+    "reset": "Zurücksetzen",
+    "clear": "Löschen",
+    "feedback": "💬 Feedback",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "conversations": "Gespräche"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "nativeLanguage": "Ihre Muttersprache",
+    "targetLanguage": "Zu erlernende Sprache",
+    "textToSpeech": "Text-zu-Sprache",
+    "ttsOn": "🔊 TTS AN",
+    "ttsOff": "🔇 TTS AUS",
+    "saveChanges": "Änderungen speichern",
+    "cancel": "Abbrechen",
+    "languagesUpdated": "Sprachen erfolgreich aktualisiert!",
+    "updateFailed": "Fehler beim Aktualisieren der Sprachen"
+  },
+  "feedback": {
+    "title": "Feedback",
+    "rating": "Wie würden Sie Ihre Erfahrung bewerten?",
+    "comments": "Kommentare:",
+    "submit": "Absenden",
+    "thankYou": "Vielen Dank für Ihr Feedback!",
+    "placeholder": "Sagen Sie uns, was Sie denken..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "Ich würde gerne von Ihrem täglichen Ablauf hören. Um wie viel Uhr stehen Sie morgens normalerweise auf?",
+    "travelDreams": "Wenn Sie jetzt überall hinreisen könnten, wohin würden Sie gehen und was würden Sie tun?",
+    "weekendPlans": "Was planen Sie dieses Wochenende zu tun? Besondere Aktivitäten oder Entspannung?",
+    "favoriteHobby": "TRANSLATION_HERE",
+    "chooseTopic": "Choose a topic to start practicing!"
+  }
+}

@@ -9,7 +9,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConversations } from '../hooks/useConversations';
 import { ConversationList } from '../components/ConversationList';
 import { StarterPrompts } from '../components/StarterPrompts';
+import { LanguageSelection } from '../components/LanguageSelection';
 import { router } from 'expo-router';
+import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 export default function HomeScreen() {
   console.log('🚀 APP STARTED - Constants available:', !!Constants);
@@ -19,22 +22,61 @@ export default function HomeScreen() {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
-  const languages = ['English', 'Spanish', 'French'];
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState<number>(5);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true); // Enable TTS by default
   const [showConversationList, setShowConversationList] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempPreferredLanguage, setTempPreferredLanguage] = useState('');
+  const [tempTargetLanguage, setTempTargetLanguage] = useState('');
   const recognizedTextRef = useRef('');
   const voiceProcessedRef = useRef(false);
+
+  const { signOut, preferredLanguage, targetLanguage, updateLanguages } = useAuth();
+  const { t } = useTranslation();
+
+  // Force re-render when language changes
+  const [currentLang, setCurrentLang] = useState(preferredLanguage);
+  useEffect(() => {
+    if (preferredLanguage !== currentLang) {
+      console.log('🌍 Language changed from', currentLang, 'to', preferredLanguage);
+      console.log('🌍 Current translations:', {
+        appName: t('app.name'),
+        typeMessage: t('chat.typeMessage'),
+        settingsTitle: t('settings.title')
+      });
+      setCurrentLang(preferredLanguage);
+    }
+  }, [preferredLanguage, currentLang, t]);
+
+  // Track when language changes to force reconnection on next message
+  const languageChangedRef = useRef(false);
+  useEffect(() => {
+    console.log('🎯 Target language changed to:', targetLanguage);
+    languageChangedRef.current = true; // Mark that language changed
+  }, [targetLanguage]);
 
   const appendLog = useCallback((msg: string) => {
     setLogs(prev => [new Date().toLocaleTimeString() + ' ' + msg, ...prev].slice(0, 200));
   }, []);
 
-  // Helper function to convert language names to TTS language codes
+  // Languages available for settings
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+    { code: 'fr', name: 'French', flag: '🇫🇷' },
+    { code: 'de', name: 'German', flag: '🇩🇪' },
+    { code: 'it', name: 'Italian', flag: '🇮🇹' },
+    { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
+    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+    { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+    { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+    { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+    { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  ];
   const getLanguageCode = useCallback((language: string) => {
     const languageMap: { [key: string]: string } = {
       'English': 'en-US',
@@ -75,7 +117,7 @@ export default function HomeScreen() {
         try {
           console.log(`🔊 Speaking AI response:`, text.substring(0, 50) + '...');
           await Speech.speak(text, {
-            language: getLanguageCode(selectedLanguage),
+            language: getLanguageCode(preferredLanguage),
             rate: 0.8, // Slightly slower for clarity
             pitch: 1.0,
           });
@@ -87,7 +129,7 @@ export default function HomeScreen() {
     } else {
       console.log(`🤖 [${timestamp}] Refs not ready - conversation:`, !!currentConversationRef.current, 'addMessage:', !!addMessageRef.current);
     }
-  }, [appendLog, ttsEnabled, selectedLanguage]);
+  }, [appendLog, ttsEnabled, preferredLanguage]);
 
   const onAIError = useCallback((err: any) => {
     const timestamp = Date.now();
@@ -113,7 +155,6 @@ export default function HomeScreen() {
     appendLog('AI session open');
   }, [appendLog]);
 
-  const { signOut, preferredLanguage } = useAuth();
   const {
     currentConversation,
     messages,
@@ -124,7 +165,12 @@ export default function HomeScreen() {
     setMessages,
   } = useConversations();
 
-  const { connect, sendTextInput, close } = useGemini(onAIMessage, onAIError, onAIClose, onAIOpen, preferredLanguage);
+  const { connect, sendTextInput, close } = useGemini({
+    onOpen: onAIOpen,
+    onMessage: onAIMessage,
+    onError: onAIError,
+    onClose: onAIClose
+  });
 
   // Update refs when hooks become available
   useEffect(() => {
@@ -207,7 +253,7 @@ export default function HomeScreen() {
       try {
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are an AI language coach. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+          systemInstruction: `You are an AI language coach. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
       } catch (e: any) {
         appendLog('Connect failed: ' + (e?.message ?? String(e)));
@@ -215,10 +261,10 @@ export default function HomeScreen() {
     } else {
       close();
     }
-  }, [isConnected, connect, close, appendLog, selectedLanguage]);
+  }, [isConnected, connect, close, appendLog, targetLanguage]);
 
   const handleReview = useCallback(async () => {
-    const prompt = `Please review my last utterance in ${selectedLanguage}. Identify mistakes and suggest corrections with brief explanations.`;
+    const prompt = `Please review my last utterance in ${preferredLanguage}. Identify mistakes and suggest corrections with brief explanations.`;
 
     // Create conversation if none exists
     let conversation = currentConversation;
@@ -233,7 +279,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting for review...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected for review');
       } catch (e: any) {
@@ -249,7 +295,7 @@ export default function HomeScreen() {
     } catch (e: any) {
       appendLog('❌ Review send failed: ' + (e?.message ?? String(e)));
     }
-  }, [selectedLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage]);
+  }, [preferredLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage, targetLanguage]);
 
   const handleVoiceMessage = useCallback(async (text: string) => {
     console.log('🎤 HANDLING VOICE MESSAGE:', text);
@@ -272,7 +318,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting for voice message...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected for voice');
       } catch (e: any) {
@@ -295,7 +341,7 @@ export default function HomeScreen() {
       console.log('❌ Voice send error:', e);
       appendLog('❌ Voice send failed: ' + (e?.message ?? String(e)));
     }
-  }, [currentConversation, isConnected, createConversation, connect, sendTextInput, selectedLanguage, appendLog, addMessage]);
+  }, [currentConversation, isConnected, createConversation, connect, sendTextInput, preferredLanguage, appendLog, addMessage, targetLanguage]);
 
   const handleSend = useCallback(async (source = 'unknown') => {
     const timestamp = Date.now();
@@ -305,6 +351,18 @@ export default function HomeScreen() {
 
     const text = message.trim();
     console.log(`📤 [${timestamp}] Trimmed text:`, text);
+
+    // Check if language changed and we need to reconnect
+    if (languageChangedRef.current && isConnected) {
+      console.log('🌍 Language changed, reconnecting Gemini...');
+      close();
+      // Wait a bit for close to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      connect();
+      languageChangedRef.current = false;
+      // Wait for connection to establish
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     if (!text) {
       console.log(`📤 [${timestamp}] NO TEXT - returning early`);
@@ -330,7 +388,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting to AI session...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${selectedLanguage}.`,
+          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected successfully');
       } catch (e: any) {
@@ -353,7 +411,7 @@ export default function HomeScreen() {
       console.log('❌ TEXT SEND ERROR:', e);
       appendLog('❌ Send failed: ' + (e?.message ?? String(e)));
     }
-  }, [message, currentConversation, isConnected, createConversation, connect, sendTextInput, selectedLanguage, appendLog, addMessage]);
+  }, [message, currentConversation, isConnected, createConversation, connect, close, preferredLanguage, appendLog, addMessage, languageChangedRef]);
 
   const handleSelectConversation = useCallback(async (conversation: any) => {
     console.log('📂 Selecting conversation:', conversation?.title, 'ID:', conversation?.id);
@@ -363,6 +421,16 @@ export default function HomeScreen() {
   }, [setCurrentConversation, loadMessages]);
 
   const handleSelectStarterPrompt = useCallback(async (prompt: any) => {
+    // Check if language changed and we need to reconnect
+    if (languageChangedRef.current && isConnected) {
+      console.log('🌍 Language changed, reconnecting Gemini before starter prompt...');
+      close();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      connect();
+      languageChangedRef.current = false;
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
     // Create conversation with the prompt title
     const conversation = await createConversation(prompt.title);
 
@@ -395,7 +463,7 @@ export default function HomeScreen() {
         appendLog('❌ Send failed: ' + (e?.message ?? String(e)));
       }
     }
-  }, [createConversation, isConnected, connect, addMessage, sendTextInput, appendLog, preferredLanguage]);
+  }, [createConversation, isConnected, connect, close, addMessage, sendTextInput, appendLog, preferredLanguage, targetLanguage, languageChangedRef]);
 
   const handleVoiceInput = useCallback(async () => {
     if (!ExpoSpeechRecognitionModule) {
@@ -413,7 +481,7 @@ export default function HomeScreen() {
           Alert.alert('Permission Denied', 'Please enable speech recognition in Settings');
           return;
         }
-        const lang = selectedLanguage === 'Spanish' ? 'es-ES' : selectedLanguage === 'French' ? 'fr-FR' : 'en-US';
+        const lang = preferredLanguage === 'Spanish' ? 'es-ES' : preferredLanguage === 'French' ? 'fr-FR' : 'en-US';
         appendLog(`🎙 Starting recognition (${lang})...`);
         await ExpoSpeechRecognitionModule.start({
           lang,
@@ -436,7 +504,7 @@ export default function HomeScreen() {
         setIsRecording(false);
       }
     }
-  }, [isRecording, selectedLanguage, appendLog]);
+  }, [isRecording, preferredLanguage, appendLog]);
 
   const handleSubmitReview = useCallback(async () => {
     console.log('🎯 FEEDBACK SUBMIT FUNCTION CALLED');
@@ -533,16 +601,16 @@ export default function HomeScreen() {
           <Pressable style={styles.menuButton} onPress={() => setShowConversationList(true)}>
             <Text style={styles.menuText}>📋</Text>
           </Pressable>
-          <Text style={styles.title}>Fluent Flo</Text>
+          <Text style={styles.title}>{t('app.name')}</Text>
         </View>
         <View style={styles.headerRight}>
-          <View style={styles.langRow}>
-            {languages.map((lang) => (
-              <Pressable key={lang} style={[styles.chipSmall, selectedLanguage === lang && styles.chipSelected]} onPress={() => setSelectedLanguage(lang)}>
-                <Text style={styles.chipText}>{lang.slice(0,2)}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Pressable style={styles.settingsButton} onPress={() => {
+            setTempPreferredLanguage(preferredLanguage);
+            setTempTargetLanguage(targetLanguage);
+            setShowSettingsModal(true);
+          }}>
+            <Text style={styles.settingsText}>⚙️</Text>
+          </Pressable>
           <Pressable style={styles.logoutButton} onPress={handleSignOut}>
             <Text style={styles.logoutText}>🚪</Text>
           </Pressable>
@@ -551,24 +619,24 @@ export default function HomeScreen() {
 
       <View style={styles.extraControls}>
         <Pressable style={styles.smallButton} onPress={handleReview}>
-          <Text style={styles.smallButtonText}>Review</Text>
+          <Text style={styles.smallButtonText}>{t('chat.review')}</Text>
         </Pressable>
         <Pressable style={styles.smallButton} onPress={handleResetSession}>
-          <Text style={styles.smallButtonText}>Reset</Text>
+          <Text style={styles.smallButtonText}>{t('chat.reset')}</Text>
         </Pressable>
         <Pressable style={styles.smallButton} onPress={handleClearChat}>
-          <Text style={styles.smallButtonText}>Clear</Text>
+          <Text style={styles.smallButtonText}>{t('chat.clear')}</Text>
         </Pressable>
         <Pressable
           style={[styles.smallButton, ttsEnabled && styles.ttsEnabled]}
           onPress={() => setTtsEnabled(!ttsEnabled)}
         >
           <Text style={styles.smallButtonText}>
-            {ttsEnabled ? '🔊 TTS ON' : '🔇 TTS OFF'}
+            {ttsEnabled ? t('settings.ttsOn') : t('settings.ttsOff')}
           </Text>
         </Pressable>
         <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
-          <Text style={styles.smallButtonText}>💬 Feedback</Text>
+          <Text style={styles.smallButtonText}>{t('chat.feedback')}</Text>
         </Pressable>
       </View>
 
@@ -593,7 +661,7 @@ export default function HomeScreen() {
           style={styles.chatInput}
           value={message}
           onChangeText={setMessage}
-          placeholder="Type your message..."
+          placeholder={t('chat.typeMessage')}
           placeholderTextColor="#9CA3AF"
           multiline={false}
           blurOnSubmit={false}
@@ -658,6 +726,105 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      {/* Settings Modal */}
+      <Modal
+        visible={showSettingsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSettingsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('settings.title')}</Text>
+
+            <ScrollView style={styles.settingsScroll}>
+              <LanguageSelection
+                title={t('settings.nativeLanguage')}
+                selectedLanguage={tempPreferredLanguage}
+                onSelectLanguage={setTempPreferredLanguage}
+              />
+
+              <LanguageSelection
+                title={t('settings.targetLanguage')}
+                selectedLanguage={tempTargetLanguage}
+                onSelectLanguage={setTempTargetLanguage}
+              />
+
+              <View style={styles.ttsSection}>
+                <Text style={styles.ttsTitle}>{t('settings.textToSpeech')}</Text>
+                <Pressable
+                  style={[styles.ttsButton, ttsEnabled && styles.ttsEnabled]}
+                  onPress={() => setTtsEnabled(!ttsEnabled)}
+                >
+                  <Text style={styles.ttsButtonText}>
+                    {ttsEnabled ? t('settings.ttsOn') : t('settings.ttsOff')}
+                  </Text>
+                </Pressable>
+
+                {/* Debug button */}
+                <Pressable
+                  style={[styles.ttsButton, { backgroundColor: '#F59E0B', marginTop: 10 }]}
+                  onPress={async () => {
+                    console.log('🔍 TESTING DATABASE CONNECTION');
+                    try {
+                      const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
+                      console.log('📊 Database test result:', { data, error });
+                      Alert.alert('Database Test', error ? `Error: ${error.message}` : 'Database connected successfully!');
+                    } catch (err) {
+                      console.log('💥 Database test error:', err);
+                      Alert.alert('Database Test Failed', `Error: ${err}`);
+                    }
+                  }}
+                >
+                  <Text style={styles.ttsButtonText}>🔍 Test DB</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowSettingsModal(false)}
+              >
+                <Text style={styles.modalButtonText}>{t('settings.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={async () => {
+                  console.log('💾 SAVE BUTTON PRESSED');
+                  console.log('📊 Current values:', { tempPreferredLanguage, tempTargetLanguage });
+                  console.log('🔗 updateLanguages function:', !!updateLanguages);
+
+                  if (updateLanguages) {
+                    try {
+                      const result = await updateLanguages(tempPreferredLanguage, tempTargetLanguage);
+                      console.log('🔄 updateLanguages result:', result);
+
+                      if (result.error) {
+                        console.log('❌ Update failed:', result.error);
+                        Alert.alert(t('settings.updateFailed'), `Error: ${result.error}\n\nCheck console logs for details.`);
+                      } else {
+                        console.log('✅ Update successful');
+                        Alert.alert(t('settings.languagesUpdated'), t('settings.languagesUpdated'));
+                        setShowSettingsModal(false);
+                      }
+                    } catch (error) {
+                      console.log('💥 Unexpected error in save:', error);
+                      Alert.alert(t('settings.updateFailed'), `Something went wrong: ${error}`);
+                    }
+                  } else {
+                    console.log('❌ updateLanguages function not available');
+                    Alert.alert(t('settings.updateFailed'), 'Update function not available');
+                  }
+                }}
+              >
+                <Text style={styles.modalButtonText}>{t('settings.saveChanges')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <ConversationList
         visible={showConversationList}
         onClose={() => {
@@ -678,10 +845,8 @@ const styles = StyleSheet.create({
   menuText: { fontSize: 18 },
   title: { fontSize: 20, fontWeight: '700', color: 'white' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  langRow: { flexDirection: 'row', gap: 6 },
-  chipSmall: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 9999, backgroundColor: '#374151' },
-  chipSelected: { backgroundColor: '#2563EB' },
-  chipText: { color: 'white', fontSize: 12, fontWeight: '600' },
+  settingsButton: { padding: 8 },
+  settingsText: { fontSize: 18 },
   logoutButton: { padding: 8 },
   logoutText: { fontSize: 18 },
   chatArea: { padding: 16, gap: 8 },
@@ -712,6 +877,12 @@ const styles = StyleSheet.create({
   cancelButton: { backgroundColor: '#374151' },
   submitButton: { backgroundColor: '#2563EB' },
   modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  settingsScroll: { maxHeight: 400 },
+  ttsSection: { marginTop: 20, paddingHorizontal: 20 },
+  ttsTitle: { fontSize: 18, fontWeight: '600', color: '#D1D5DB', marginBottom: 12, textAlign: 'center' },
+  ttsButton: { backgroundColor: '#374151', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  ttsButtonText: { color: '#D1D5DB', fontSize: 16, fontWeight: '600' },
+  saveButton: { backgroundColor: '#10B981' },
   ttsEnabled: {
     backgroundColor: '#10B981', // Green when enabled
   },

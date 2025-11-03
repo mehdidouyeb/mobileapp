@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Fluent Flo",
-    "slug": "fluent-flo",
+    "slug": "fluentflo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,6 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "extra": {
+      "extra": {
+      "eas": {
+        "projectId": "f929cbb7-a19a-49e8-9977-01f245fa7323"
+      },
       "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE",
       "SUPABASE_URL": "YOUR_SUPABASE_URL_HERE",
       "SUPABASE_ANON_KEY": "YOUR_SUPABASE_ANON_KEY_HERE"

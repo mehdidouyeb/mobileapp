@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import '../lib/i18n'; // Initialize i18n
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';

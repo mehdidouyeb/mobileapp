@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "Bentornato",
+    "createAccount": "Crea Account",
+    "chooseLanguages": "Scegli le tue Lingue"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Accedi",
+    "signUp": "Registrati",
+    "next": "Avanti",
+    "createAccount": "Crea Account",
+    "alreadyHaveAccount": "Hai già un account? Accedi",
+    "dontHaveAccount": "Non hai un account? Registrati",
+    "forgotPassword": "Password dimenticata?",
+    "resetPassword": "Email di reset password inviata!",
+    "accountCreated": "Account creato! Ora puoi accedere.",
+    "nativeLanguage": "Qual è la tua lingua madre?",
+    "targetLanguage": "Quale lingua vuoi imparare?"
+  },
+  "chat": {
+    "typeMessage": "Scrivi il tuo messaggio...",
+    "send": "Invia",
+    "review": "Revisiona",
+    "reset": "Ripristina",
+    "clear": "Cancella",
+    "feedback": "💬 Feedback",
+    "settings": "Impostazioni",
+    "logout": "Esci",
+    "conversations": "Conversazioni"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "nativeLanguage": "La tua Lingua Madre",
+    "targetLanguage": "Lingua da Imparare",
+    "textToSpeech": "Testo a Voce",
+    "ttsOn": "🔊 TTS ATTIVO",
+    "ttsOff": "🔇 TTS DISATTIVO",
+    "saveChanges": "Salva Modifiche",
+    "cancel": "Annulla",
+    "languagesUpdated": "Lingue aggiornate con successo!",
+    "updateFailed": "Errore nell'aggiornamento delle lingue"
+  },
+  "feedback": {
+    "title": "Feedback",
+    "rating": "Come valuteresti la tua esperienza?",
+    "comments": "Commenti:",
+    "submit": "Invia",
+    "thankYou": "Grazie per il tuo feedback!",
+    "placeholder": "Dicci cosa ne pensi..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "Mi piacerebbe sentire della tua routine quotidiana. A che ora ti alzi normalmente la mattina?",
+    "travelDreams": "Se potessi viaggiare ovunque in questo momento, dove andresti e cosa faresti?",
+    "weekendPlans": "Cosa prevedi di fare questo fine settimana? Attività speciali o relax?",
+    "favoriteHobby": "TRANSLATION_HERE",
+    "chooseTopic": "Choose a topic to start practicing!"
+  }
+}

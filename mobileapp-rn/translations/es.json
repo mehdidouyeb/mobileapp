@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "Bienvenido de Vuelta",
+    "createAccount": "Crear Cuenta",
+    "chooseLanguages": "Elige Tus Idiomas"
+  },
+  "auth": {
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "next": "Siguiente",
+    "createAccount": "Crear Cuenta",
+    "alreadyHaveAccount": "¿Ya tienes cuenta? Inicia Sesión",
+    "dontHaveAccount": "¿No tienes cuenta? Regístrate",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "¡Correo de restablecimiento enviado!",
+    "accountCreated": "¡Cuenta creada! Ahora puedes iniciar sesión.",
+    "nativeLanguage": "¿Cuál es tu idioma nativo?",
+    "targetLanguage": "¿Qué idioma quieres aprender?"
+  },
+  "chat": {
+    "typeMessage": "Escribe un mensaje...",
+    "send": "Enviar",
+    "review": "Revisar",
+    "reset": "Reiniciar",
+    "clear": "Limpiar",
+    "feedback": "💬 Comentarios",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión",
+    "conversations": "Conversaciones"
+  },
+  "settings": {
+    "title": "Configuración",
+    "nativeLanguage": "Tu Idioma Nativo",
+    "targetLanguage": "Idioma que Quieres Aprender",
+    "textToSpeech": "Texto a Voz",
+    "ttsOn": "🔊 TTS ACTIVADO",
+    "ttsOff": "🔇 TTS DESACTIVADO",
+    "saveChanges": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "languagesUpdated": "¡Idiomas actualizados exitosamente!",
+    "updateFailed": "Error al actualizar idiomas"
+  },
+  "feedback": {
+    "title": "Comentarios",
+    "rating": "¿Cómo calificarías tu experiencia?",
+    "comments": "Comentarios:",
+    "submit": "Enviar",
+    "thankYou": "¡Gracias por tus comentarios!",
+    "placeholder": "Cuéntanos qué piensas..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "Me gustaría escuchar sobre tu rutina diaria. ¿A qué hora sueles despertarte por la mañana?",
+    "travelDreams": "Si pudieras viajar a cualquier lugar ahora mismo, ¿adónde irías y qué harías?",
+    "weekendPlans": "¿Qué planeas hacer este fin de semana? ¿Alguna actividad especial o descanso?",
+    "favoriteHobby": "¿Cuál es un pasatiempo o actividad que disfrutas? Cuéntame qué te gusta de ello.",
+    "chooseTopic": "¡Elige un tema para comenzar a practicar!"
+  }
+}

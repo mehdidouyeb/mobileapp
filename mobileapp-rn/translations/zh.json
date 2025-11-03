@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "欢迎回来",
+    "createAccount": "创建账户",
+    "chooseLanguages": "选择您的语言"
+  },
+  "auth": {
+    "email": "邮箱",
+    "password": "密码",
+    "signIn": "登录",
+    "signUp": "注册",
+    "next": "下一步",
+    "createAccount": "创建账户",
+    "alreadyHaveAccount": "已有账户？登录",
+    "dontHaveAccount": "没有账户？注册",
+    "forgotPassword": "忘记密码？",
+    "resetPassword": "密码重置邮件已发送！",
+    "accountCreated": "账户已创建！您现在可以登录。",
+    "nativeLanguage": "您的母语是什么？",
+    "targetLanguage": "您想学习哪种语言？"
+  },
+  "chat": {
+    "typeMessage": "输入您的消息...",
+    "send": "发送",
+    "review": "复习",
+    "reset": "重置",
+    "clear": "清除",
+    "feedback": "💬 反馈",
+    "settings": "设置",
+    "logout": "登出",
+    "conversations": "对话"
+  },
+  "settings": {
+    "title": "设置",
+    "nativeLanguage": "您的母语",
+    "targetLanguage": "要学习的语言",
+    "textToSpeech": "文字转语音",
+    "ttsOn": "🔊 TTS开启",
+    "ttsOff": "🔇 TTS关闭",
+    "saveChanges": "保存更改",
+    "cancel": "取消",
+    "languagesUpdated": "语言更新成功！",
+    "updateFailed": "语言更新失败"
+  },
+  "feedback": {
+    "title": "反馈",
+    "rating": "您如何评价您的体验？",
+    "comments": "评论：",
+    "submit": "提交",
+    "thankYou": "感谢您的反馈！",
+    "placeholder": "告诉我们您的想法..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "我想听听您的日常作息。通常早上几点起床？",
+    "travelDreams": "如果您现在可以去任何地方旅行，您会去哪里做什么？",
+    "weekendPlans": "您这个周末计划做什么？特殊活动还是放松？",
+    "favoriteHobby": "TRANSLATION_HERE",
+    "chooseTopic": "Choose a topic to start practicing!"
+  }
+}

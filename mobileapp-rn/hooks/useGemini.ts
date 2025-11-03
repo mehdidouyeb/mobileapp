@@ -1,98 +1,126 @@
 import { useCallback, useRef } from 'react';
 import Constants from 'expo-constants';
+import { useAuth } from '../contexts/AuthContext';
 
-export function useGemini(
-  onMessage?: (event: any) => void,
-  onError?: (error: any) => void,
-  onClose?: () => void,
-  onOpen?: () => void,
-  preferredLanguage?: string
-) {
+interface UseGeminiOptions {
+  model?: string;
+  systemInstruction?: string;
+  onOpen?: () => void;
+  onMessage?: (message: any) => void;
+  onError?: (error: any) => void;
+  onClose?: () => void;
+}
+
+export function useGemini(options?: UseGeminiOptions) {
+  const { targetLanguage } = useAuth();
+  const { onOpen, onMessage, onError, onClose } = options || {};
   const sessionRef = useRef<any>(null);
   const clientRef = useRef<any>(null);
 
   const connect = useCallback(async (options?: { model?: string; systemInstruction?: string }) => {
+    console.log('🔌 GEMINI CONNECT called with options:', options);
+    console.log('🌍 Current targetLanguage:', targetLanguage);
+
     const apiKey = (Constants?.expoConfig?.extra as any)?.GEMINI_API_KEY || (process.env as any)?.EXPO_PUBLIC_GEMINI_API_KEY || 'AIzaSyC-Dh45i2BPrUV5ifB7GjF1Pha-BWKP91E';
     if (!apiKey) throw new Error('Missing Gemini API key. Set expo.extra.GEMINI_API_KEY or EXPO_PUBLIC_GEMINI_API_KEY.');
+
+    const systemInstruction = options?.systemInstruction ?? `You are Fluent Flo, an AI language learning assistant. Always respond in ${targetLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`;
+
+    console.log('🤖 Using systemInstruction:', systemInstruction);
 
     // Store simple REST config in clientRef for subsequent calls
     clientRef.current = {
       apiKey,
       model: options?.model ?? 'gemini-1.5-flash', // Try 1.5-flash first
-      systemInstruction: options?.systemInstruction ?? `You are Fluent Flo, an AI language learning assistant. Always respond in ${preferredLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`,
+      systemInstruction,
     };
     sessionRef.current = { connected: true };
-    if (onOpen) onOpen();
+
+    console.log('✅ Gemini connected successfully');
+    if (onOpen) {
+      console.log('🔄 Calling onOpen callback');
+      onOpen();
+    }
     return sessionRef.current;
-  }, [onOpen]);
+  }, [onOpen, targetLanguage]);
 
 
   const sendTextInput = useCallback(async (text: string) => {
-    if (!sessionRef.current || !clientRef.current) return;
+    console.log('📤 sendTextInput called with text:', text);
+    if (!sessionRef.current || !clientRef.current) {
+      console.log('❌ No session or client available');
+      return;
+    }
+
     const { apiKey, model, systemInstruction } = clientRef.current as any;
+    console.log('🔑 Using API config:', { hasApiKey: !!apiKey, model, hasSystemInstruction: !!systemInstruction });
+
     const modelCandidates = [
       'gemini-1.5-flash',  // Most available
       'gemini-1.5-pro',    // Second most available
       'gemini-2.5-flash',  // Newer but may not be available
     ].filter((m, i, a) => !!m && a.indexOf(m) === i);
 
-    // Prepend system instruction to user text since v1beta doesn't support system role
-    let userText = text;
-    if (systemInstruction) {
-      userText = `${systemInstruction}\n\nUser: ${text}`;
-    }
-    const body: any = {
-      contents: [{ role: 'user', parts: [{ text: userText }] }],
-    };
+    console.log('🎯 Trying models in order:', modelCandidates);
 
-    let lastErr: any = null;
-    for (const candidate of modelCandidates) {
+    for (const modelName of modelCandidates) {
       try {
-        console.log(`🔗 Trying Gemini model: ${candidate}`);
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-        console.log(`🔗 API endpoint: ${endpoint}`);
+        console.log(`🚀 Trying model: ${modelName}`);
 
-        const res = await fetch(endpoint, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: systemInstruction ? `${systemInstruction}\n\nUser: ${text}` : text
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            },
+          }),
         });
 
-        console.log(`🔗 API response status: ${res.status}`);
+        console.log(`📡 API response status: ${response.status}`);
 
-        if (!res.ok) {
-          const txt = await res.text().catch(() => '');
-          console.log(`🔗 API error response: ${txt}`);
-          // If model not found or unsupported for endpoint, try next candidate
-          if (res.status === 404 || /not found|unsupported/i.test(txt)) {
-            lastErr = new Error(`Model ${candidate} unavailable: ${txt}`);
-            continue;
-          }
-          throw new Error(`Gemini HTTP ${res.status}: ${txt}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log(`❌ API error for ${modelName}:`, errorText);
+          continue; // Try next model
         }
 
-        const json = await res.json();
-        console.log(`🔗 API success response:`, json);
+        const data = await response.json();
+        console.log(`✅ Successful response from ${modelName}:`, data);
 
-        const parts = json?.candidates?.[0]?.content?.parts ?? [];
-        const combined = parts.map((p: any) => p?.text).filter(Boolean).join('\n');
+        const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        console.log('📝 Generated text:', generatedText);
 
-        console.log(`🔗 Extracted response text: "${combined}"`);
-
-        console.log(`🔗 CALLING onMessage with: "${combined}"`);
-        if (onMessage) {
-          onMessage(combined || JSON.stringify(json));
-          console.log(`🔗 onMessage callback executed`);
+        if (generatedText && onMessage) {
+          console.log('🔄 Calling onMessage callback');
+          onMessage(generatedText);
         } else {
-          console.log(`🔗 onMessage callback is null/undefined`);
+          console.log('❌ No generated text or no onMessage callback');
         }
-        return;
-      } catch (e) {
-        console.log(`🔗 Error with model ${candidate}:`, e);
-        lastErr = e;
+
+        return; // Success, don't try other models
+
+      } catch (error) {
+        console.log(`💥 Error with model ${modelName}:`, error);
+        continue; // Try next model
       }
     }
-    if (onError && lastErr) onError(lastErr);
+
+    console.log('❌ All models failed');
+    if (onError) {
+      console.log('🔄 Calling onError callback');
+      onError(new Error('All Gemini models failed'));
+    }
   }, [onMessage, onError]);
 
   const close = useCallback(() => {

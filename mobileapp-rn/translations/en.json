@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "chooseLanguages": "Choose Your Languages"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "next": "Next",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account? Sign In",
+    "dontHaveAccount": "Don't have an account? Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Password reset email sent!",
+    "accountCreated": "Account created! You can now sign in.",
+    "nativeLanguage": "What's your native language?",
+    "targetLanguage": "What language do you want to learn?"
+  },
+  "chat": {
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "review": "Review",
+    "reset": "Reset",
+    "clear": "Clear",
+    "feedback": "💬 Feedback",
+    "settings": "Settings",
+    "logout": "Logout",
+    "conversations": "Conversations"
+  },
+  "settings": {
+    "title": "Settings",
+    "nativeLanguage": "Your Native Language",
+    "targetLanguage": "Language You Want to Learn",
+    "textToSpeech": "Text-to-Speech",
+    "ttsOn": "🔊 TTS ON",
+    "ttsOff": "🔇 TTS OFF",
+    "saveChanges": "Save Changes",
+    "cancel": "Cancel",
+    "languagesUpdated": "Languages updated successfully!",
+    "updateFailed": "Failed to update languages"
+  },
+  "feedback": {
+    "title": "Feedback",
+    "rating": "How would you rate your experience?",
+    "comments": "Comments:",
+    "submit": "Submit",
+    "thankYou": "Thank you for your feedback!",
+    "placeholder": "Tell us what you think..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "I'd love to hear about your daily routine. What time do you usually wake up in the morning?",
+    "travelDreams": "If you could travel anywhere right now, where would you go and what would you do there?",
+    "weekendPlans": "What are you planning to do this weekend? Any special activities or relaxation?",
+    "favoriteHobby": "What's a hobby or activity you really enjoy? Tell me what you like about it.",
+    "chooseTopic": "Choose a topic to start practicing!"
+  }
+}

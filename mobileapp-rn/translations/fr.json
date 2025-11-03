@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Fluent Flo",
+    "welcomeBack": "Bienvenue",
+    "createAccount": "Créer un Compte",
+    "chooseLanguages": "Choisissez vos Langues"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Mot de Passe",
+    "signIn": "Se Connecter",
+    "signUp": "S'inscrire",
+    "next": "Suivant",
+    "createAccount": "Créer un Compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte ? Connectez-vous",
+    "dontHaveAccount": "Pas de compte ? Inscrivez-vous",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Email de réinitialisation envoyé !",
+    "accountCreated": "Compte créé ! Vous pouvez maintenant vous connecter.",
+    "nativeLanguage": "Quelle est votre langue maternelle ?",
+    "targetLanguage": "Quelle langue voulez-vous apprendre ?"
+  },
+  "chat": {
+    "typeMessage": "Tapez votre message...",
+    "send": "Envoyer",
+    "review": "Réviser",
+    "reset": "Réinitialiser",
+    "clear": "Effacer",
+    "feedback": "💬 Commentaires",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "conversations": "Conversations"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "nativeLanguage": "Votre Langue Maternelle",
+    "targetLanguage": "Langue à Apprendre",
+    "textToSpeech": "Synthèse Vocale",
+    "ttsOn": "🔊 TTS ACTIVÉ",
+    "ttsOff": "🔇 TTS DÉSACTIVÉ",
+    "saveChanges": "Sauvegarder",
+    "cancel": "Annuler",
+    "languagesUpdated": "Langues mises à jour avec succès !",
+    "updateFailed": "Échec de la mise à jour des langues"
+  },
+  "feedback": {
+    "title": "Commentaires",
+    "rating": "Comment évalueriez-vous votre expérience ?",
+    "comments": "Commentaires :",
+    "submit": "Envoyer",
+    "thankYou": "Merci pour vos commentaires !",
+    "placeholder": "Dites-nous ce que vous pensez..."
+  },
+  "starterPrompts": {
+    "dailyRoutine": "J'aimerais entendre parler de votre routine quotidienne. À quelle heure vous levez-vous généralement le matin ?",
+    "travelDreams": "Si vous pouviez voyager n'importe où en ce moment, où iriez-vous et que feriez-vous ?",
+    "weekendPlans": "Que prévoyez-vous de faire ce week-end ? Des activités spéciales ou du repos ?",
+    "favoriteHobby": "Quel est un passe-temps ou une activité que vous aimez ? Parlez-moi de ce que vous aimez à ce sujet.",
+    "chooseTopic": "Choisissez un sujet pour commencer à pratiquer !"
+  }
+}

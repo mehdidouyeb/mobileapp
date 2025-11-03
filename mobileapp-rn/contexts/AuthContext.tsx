@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
+import i18n from '../lib/i18n';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [targetLanguage, setTargetLanguage] = useState<string>('en');
 
   console.log('🔐 AUTH PROVIDER RENDER - user:', user, 'loading:', loading);
+
+  // Change app language when preferred language changes
+  useEffect(() => {
+    if (preferredLanguage) {
+      i18n.changeLanguage(preferredLanguage);
+      console.log('🌍 Changed app language to:', preferredLanguage);
+    }
+  }, [preferredLanguage]);
 
   useEffect(() => {
     console.log('🔐 AUTH PROVIDER useEffect STARTING');
@@ -105,23 +114,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateLanguages = async (preferred: string, target: string) => {
-    if (!user) return { error: 'No user logged in' };
+    console.log('🌍 updateLanguages called:', { preferred, target, userId: user?.id });
 
-    const { error } = await supabase
-      .from('user_profiles')
-      .update({
-        preferred_language: preferred,
-        target_language: target,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-
-    if (!error) {
-      setPreferredLanguage(preferred);
-      setTargetLanguage(target);
+    if (!user) {
+      console.log('❌ No user logged in');
+      return { error: 'No user logged in' };
     }
 
-    return { error };
+    try {
+      // First check if user profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      console.log('👤 Existing profile check:', { existingProfile, checkError });
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.log('❌ Profile check error:', checkError);
+        return { error: checkError.message };
+      }
+
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        console.log('📝 Updating existing profile');
+        result = await supabase
+          .from('user_profiles')
+          .update({
+            preferred_language: preferred,
+            target_language: target,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+      } else {
+        // Create new profile
+        console.log('🆕 Creating new profile');
+        result = await supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            preferred_language: preferred,
+            target_language: target,
+          });
+      }
+
+      console.log('💾 Database result:', result);
+
+      if (!result.error) {
+        setPreferredLanguage(preferred);
+        setTargetLanguage(target);
+        console.log('✅ Languages updated in state');
+      } else {
+        console.log('❌ Database error:', result.error);
+      }
+
+      return { error: result.error };
+    } catch (error) {
+      console.log('💥 Unexpected error:', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   };
 
   const signIn = async (email: string, password: string) => {

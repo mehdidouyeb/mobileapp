@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Fluent Flo",
-    "slug": "fluent-flo",
+    "slug": "fluentflo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,6 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "extra": {
+      "eas": {
+        "projectId": "f929cbb7-a19a-49e8-9977-01f245fa7323"
+      },
       "GEMINI_API_KEY": "AIzaSyC-Dh45i2BPrUV5ifB7GjF1Pha-BWKP91E",
       "SUPABASE_URL": "https://altkaturqulvdujhopzg.supabase.co",
       "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsdGthdHVycXVsdmR1amhvcHpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDA2ODEsImV4cCI6MjA3NjE3NjY4MX0.lxoO8u1pUQuwNcw2vrUH0fzEatspSrM-ftIOX2faot0"

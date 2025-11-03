@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { router } from 'expo-router';
 import { LanguageSelection } from '../components/LanguageSelection';
+import { useTranslation } from 'react-i18next';
 
 type AuthStep = 'credentials' | 'languages';
 
@@ -25,11 +26,12 @@ export default function AuthScreen({ navigation }: any) {
   const [targetLanguage, setTargetLanguage] = useState('en');
 
   const { signIn, signUp, resetPassword } = useAuth();
+  const { t } = useTranslation();
 
   const handleNext = () => {
     if (currentStep === 'credentials') {
       if (!email || !password) {
-        Alert.alert('Error', 'Please fill in all fields');
+        Alert.alert(t('settings.updateFailed'), t('auth.email') + ' and ' + t('auth.password') + ' are required');
         return;
       }
       if (isSignUp) {
@@ -52,11 +54,11 @@ export default function AuthScreen({ navigation }: any) {
       if (isSignUp) {
         const { error } = await signUp(email, password, preferredLanguage, targetLanguage);
         if (error) {
-          Alert.alert('Error', error.message);
+          Alert.alert(t('settings.updateFailed'), error.message);
         } else {
           Alert.alert(
-            'Success',
-            'Account created! You can now sign in.',
+            t('auth.accountCreated'),
+            t('auth.accountCreated'),
             [{ text: 'OK', onPress: () => {
               setIsSignUp(false);
               setCurrentStep('credentials');
@@ -66,7 +68,7 @@ export default function AuthScreen({ navigation }: any) {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          Alert.alert('Error', error.message);
+          Alert.alert(t('settings.updateFailed'), error.message);
         } else {
           // Sign in successful - navigate to main app (Fluent Flo)
           console.log('✅ SIGN IN SUCCESSFUL - NAVIGATING TO FLUENT FLO');
@@ -74,7 +76,7 @@ export default function AuthScreen({ navigation }: any) {
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert(t('settings.updateFailed'), 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -82,19 +84,19 @@ export default function AuthScreen({ navigation }: any) {
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      Alert.alert(t('settings.updateFailed'), t('auth.email') + ' is required');
       return;
     }
 
     try {
       const { error } = await resetPassword(email);
       if (error) {
-        Alert.alert('Error', error.message);
+        Alert.alert(t('settings.updateFailed'), error.message);
       } else {
-        Alert.alert('Success', 'Password reset email sent!');
+        Alert.alert(t('auth.resetPassword'));
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert(t('settings.updateFailed'), 'An unexpected error occurred');
     }
   };
 
@@ -104,15 +106,15 @@ export default function AuthScreen({ navigation }: any) {
         <Text style={styles.title}>Fluent Flo</Text>
         <Text style={styles.subtitle}>
           {isSignUp ? (
-            currentStep === 'credentials' ? 'Create Account' : 'Choose Your Languages'
-          ) : 'Welcome Back'}
+            currentStep === 'credentials' ? t('app.createAccount') : t('app.chooseLanguages')
+          ) : t('app.welcomeBack')}
         </Text>
 
         {currentStep === 'credentials' ? (
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('auth.email')}
               placeholderTextColor="#9CA3AF"
               value={email}
               onChangeText={setEmail}
@@ -122,7 +124,7 @@ export default function AuthScreen({ navigation }: any) {
 
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder={t('auth.password')}
               placeholderTextColor="#9CA3AF"
               value={password}
               onChangeText={setPassword}
@@ -139,7 +141,7 @@ export default function AuthScreen({ navigation }: any) {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.buttonText}>
-                  {isSignUp ? 'Next' : 'Sign In'}
+                  {isSignUp ? t('auth.next') : t('auth.signIn')}
                 </Text>
               )}
             </Pressable>
@@ -153,8 +155,8 @@ export default function AuthScreen({ navigation }: any) {
             >
               <Text style={styles.linkText}>
                 {isSignUp
-                  ? 'Already have an account? Sign In'
-                  : "Don't have an account? Sign Up"}
+                  ? t('auth.alreadyHaveAccount')
+                  : t('auth.dontHaveAccount')}
               </Text>
             </Pressable>
 
@@ -163,20 +165,20 @@ export default function AuthScreen({ navigation }: any) {
                 style={styles.linkButton}
                 onPress={handleResetPassword}
               >
-                <Text style={styles.linkText}>Forgot Password?</Text>
+                <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
               </Pressable>
             )}
           </View>
         ) : (
           <View style={styles.form}>
             <LanguageSelection
-              title="What's your native language?"
+              title={t('auth.nativeLanguage')}
               selectedLanguage={preferredLanguage}
               onSelectLanguage={setPreferredLanguage}
             />
 
             <LanguageSelection
-              title="What language do you want to learn?"
+              title={t('auth.targetLanguage')}
               selectedLanguage={targetLanguage}
               onSelectLanguage={setTargetLanguage}
             />
@@ -186,7 +188,7 @@ export default function AuthScreen({ navigation }: any) {
                 style={[styles.secondaryButton]}
                 onPress={handleBack}
               >
-                <Text style={styles.secondaryButtonText}>Back</Text>
+                <Text style={styles.secondaryButtonText}>{t('settings.cancel')}</Text>
               </Pressable>
 
               <Pressable
@@ -197,7 +199,7 @@ export default function AuthScreen({ navigation }: any) {
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text style={styles.buttonText}>Create Account</Text>
+                  <Text style={styles.buttonText}>{t('auth.createAccount')}</Text>
                 )}
               </Pressable>
             </View>

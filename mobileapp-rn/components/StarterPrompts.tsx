@@ -7,6 +7,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useConversations, StarterPrompt } from '../hooks/useConversations';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 
 interface StarterPromptsProps {
   onSelectPrompt: (prompt: StarterPrompt) => void;
@@ -14,12 +16,57 @@ interface StarterPromptsProps {
 
 export function StarterPrompts({ onSelectPrompt }: StarterPromptsProps) {
   const { starterPrompts } = useConversations();
+  const { t } = useTranslation();
+  const { preferredLanguage } = useAuth();
 
   console.log('🎯 StarterPrompts component rendering');
   console.log('🎯 starterPrompts array:', starterPrompts);
   console.log('🎯 starterPrompts length:', starterPrompts?.length || 0);
 
-  if (!starterPrompts || starterPrompts.length === 0) {
+  // Create translated starter prompts based on user's preferred language
+  const translatedPrompts: StarterPrompt[] = [
+    {
+      id: 'daily-routine',
+      title: 'Daily Routine',
+      prompt: t('starterPrompts.dailyRoutine'),
+      category: 'lifestyle',
+      difficulty: 'beginner' as const,
+      language: preferredLanguage,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'travel-dreams',
+      title: 'Travel Dreams',
+      prompt: t('starterPrompts.travelDreams'),
+      category: 'travel',
+      difficulty: 'intermediate' as const,
+      language: preferredLanguage,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'weekend-plans',
+      title: 'Weekend Plans',
+      prompt: t('starterPrompts.weekendPlans'),
+      category: 'lifestyle',
+      difficulty: 'beginner' as const,
+      language: preferredLanguage,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'favorite-hobby',
+      title: 'Favorite Hobby',
+      prompt: t('starterPrompts.favoriteHobby'),
+      category: 'interests',
+      difficulty: 'beginner' as const,
+      language: preferredLanguage,
+      created_at: new Date().toISOString()
+    }
+  ];
+
+  // Use translated prompts or fall back to database prompts
+  const promptsToShow = translatedPrompts.length > 0 ? translatedPrompts : starterPrompts;
+
+  if (!promptsToShow || promptsToShow.length === 0) {
     console.log('🎯 NO STARTER PROMPTS - showing fallback');
     return (
       <View style={styles.container}>
@@ -56,33 +103,31 @@ export function StarterPrompts({ onSelectPrompt }: StarterPromptsProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Choose a topic to start chatting!</Text>
-      <Text style={styles.subtitle}>Pick any prompt below to begin a conversation with Fluent Flo</Text>
+      <Text style={styles.title}>{t('app.name')} 🎓</Text>
+      <Text style={styles.subtitle}>{t('starterPrompts.chooseTopic')}</Text>
 
-      <ScrollView style={styles.promptsList} showsVerticalScrollIndicator={false}>
-        {starterPrompts.map((prompt) => (
-          <Pressable
-            key={prompt.id}
-            style={styles.promptCard}
-            onPress={() => onSelectPrompt(prompt)}
-          >
-            <View style={styles.promptHeader}>
-              <Text style={styles.categoryEmoji}>
-                {getCategoryEmoji(prompt.category)}
-              </Text>
-              <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(prompt.difficulty) }]}>
-                <Text style={styles.difficultyText}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollContainer}>
+        <View style={styles.promptsRow}>
+          {promptsToShow.map((prompt) => (
+            <Pressable
+              key={prompt.id}
+              style={styles.promptCard}
+              onPress={() => onSelectPrompt(prompt)}
+            >
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryEmoji}>{getCategoryEmoji(prompt.category)}</Text>
+              </View>
+
+              <Text style={styles.promptTitle}>{prompt.title}</Text>
+
+              <View style={styles.difficultyBadge}>
+                <Text style={[styles.difficultyText, { color: getDifficultyColor(prompt.difficulty) }]}>
                   {prompt.difficulty}
                 </Text>
               </View>
-            </View>
-
-            <Text style={styles.promptTitle}>{prompt.title}</Text>
-            <Text style={styles.promptText} numberOfLines={2}>
-              {prompt.prompt}
-            </Text>
-          </Pressable>
-        ))}
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );

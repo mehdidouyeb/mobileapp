@@ -24,7 +24,7 @@ export function useGemini(options?: UseGeminiOptions) {
     const apiKey = (Constants?.expoConfig?.extra as any)?.GEMINI_API_KEY || (process.env as any)?.EXPO_PUBLIC_GEMINI_API_KEY || 'AIzaSyC-Dh45i2BPrUV5ifB7GjF1Pha-BWKP91E';
     if (!apiKey) throw new Error('Missing Gemini API key. Set expo.extra.GEMINI_API_KEY or EXPO_PUBLIC_GEMINI_API_KEY.');
 
-    const systemInstruction = options?.systemInstruction ?? `You are Fluent Flo, an AI language learning assistant. Always respond in ${targetLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`;
+    const systemInstruction = options?.systemInstruction ?? `You are FluentFlow, an AI language learning assistant. Always respond in ${targetLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`;
 
     console.log('🤖 Using systemInstruction:', systemInstruction);
 

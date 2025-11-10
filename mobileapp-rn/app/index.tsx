@@ -279,7 +279,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting for review...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected for review');
       } catch (e: any) {
@@ -318,7 +318,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting for voice message...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected for voice');
       } catch (e: any) {
@@ -388,7 +388,7 @@ export default function HomeScreen() {
         appendLog('🔗 Auto-connecting to AI session...');
         await connect({
           model: 'gemini-2.5-flash',
-          systemInstruction: `You are Fluent Flo, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
         });
         appendLog('✅ Auto-connected successfully');
       } catch (e: any) {
@@ -444,7 +444,7 @@ export default function HomeScreen() {
           appendLog('🔗 Auto-connecting for starter prompt...');
           await connect({
             model: 'gemini-2.5-flash',
-            systemInstruction: `You are Fluent Flo, an AI language learning assistant. Always respond in ${preferredLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`,
+            systemInstruction: `You are FluentFlow, an AI language learning assistant. Always respond in ${preferredLanguage || 'English'}. When given a conversation starter, engage the user by asking thoughtful questions and having a natural conversation. Don't just provide information - ask questions to learn about them and practice their language skills. Be friendly, encouraging, and conversational.`,
           });
         } catch (e: any) {
           console.log('❌ Auto-connect error:', e);

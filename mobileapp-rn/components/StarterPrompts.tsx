@@ -70,7 +70,7 @@ export function StarterPrompts({ onSelectPrompt }: StarterPromptsProps) {
     console.log('🎯 NO STARTER PROMPTS - showing fallback');
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to Fluent Flo! 🎓</Text>
+        <Text style={styles.title}>Welcome to FluentFlow! 🎓</Text>
         <Text style={styles.subtitle}>Loading conversation starters...</Text>
         <Text style={{ color: 'white', marginTop: 20 }}>No starter prompts available yet.</Text>
       </View>

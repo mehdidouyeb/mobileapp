@@ -103,7 +103,7 @@ export default function AuthScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Fluent Flo</Text>
+        <Text style={styles.title}>FluentFlow</Text>
         <Text style={styles.subtitle}>
           {isSignUp ? (
             currentStep === 'credentials' ? t('app.createAccount') : t('app.chooseLanguages')

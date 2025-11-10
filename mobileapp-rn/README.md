@@ -1,4 +1,4 @@
-# Fluent Flo - AI Language Learning Assistant 🤖📚
+# FluentFlow - AI Language Learning Assistant 🤖📚
 
 A modern React Native app built with Expo that helps users learn languages through AI-powered conversations. Practice speaking with Gemini AI, get instant feedback, and improve your language skills naturally.
 

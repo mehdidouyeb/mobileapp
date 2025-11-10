@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "f929cbb7-a19a-49e8-9977-01f245fa7323"
+      }
+    },
+    "owner": "jonjonthefox",
+    "slug": "fluentflo",
+    "ios": {
+      "bundleIdentifier": "com.jonjonthefox.fluentflo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}

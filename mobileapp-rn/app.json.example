@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Fluent Flo",
-    "slug": "fluentflo",
+    "name": "FluentFlow",
+    "slug": "fluentflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

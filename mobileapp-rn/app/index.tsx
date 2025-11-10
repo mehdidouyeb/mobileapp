@@ -720,7 +720,7 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
       </View>
 
       <View style={styles.extraControls}>
-        <Pressable style={styles.smallButton} onPress={handleReview}>
+        <Pressable style={[styles.smallButton, styles.reviewButton]} onPress={handleReview}>
           <Text style={styles.smallButtonText}>{t('chat.review')}</Text>
         </Pressable>
         <Pressable style={styles.smallButton} onPress={handleResetSession}>
@@ -740,12 +740,12 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
         <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
           <Text style={styles.smallButtonText}>{t('chat.feedback')}</Text>
         </Pressable>
-        <Pressable style={styles.smallButton} onPress={handleGenerateExercises}>
+        <Pressable style={[styles.smallButton, styles.exerciseButton]} onPress={handleGenerateExercises}>
           <Text style={styles.smallButtonText}>🏋️ Exercice</Text>
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.chatArea}>
+      <ScrollView contentContainerStyle={[styles.chatArea, { paddingTop: 20 }]}>
         {messages.length > 0 ? (
           messages.map((msg, i) => (
             <View key={msg.id || i} style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
@@ -1024,9 +1024,52 @@ const styles = StyleSheet.create({
   chatInput: { flex: 1, backgroundColor: '#111827', color: 'white', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, fontSize: 15 },
   sendButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2563EB', borderRadius: 20 },
   sendButtonText: { color: 'white', fontSize: 20, fontWeight: '700' },
-  extraControls: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 8, backgroundColor: '#0b1020' },
-  smallButton: { flex: 1, paddingVertical: 8, backgroundColor: '#374151', borderRadius: 8, alignItems: 'center' },
-  smallButtonText: { color: 'white', fontSize: 13, fontWeight: '600' },
+  extraControls: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 12, 
+    paddingVertical: 12, 
+    paddingBottom: 20,
+    gap: 6, 
+    backgroundColor: '#0b1020',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  smallButton: { 
+    flex: 1,
+    minWidth: 80,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  smallButtonText: { 
+    color: 'white', 
+    fontSize: 12, 
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  reviewButton: {
+    backgroundColor: '#2563EB',
+    borderColor: '#3B82F6',
+  },
+  exerciseButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#34D399',
+  },
+  ttsEnabled: {
+    backgroundColor: '#10B981',
+    borderColor: '#34D399',
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalContent: { backgroundColor: '#1a1f3a', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
   modalTitle: { fontSize: 22, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' },

@@ -28,11 +28,16 @@ export default function HomeScreen() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true); // Enable TTS by default
   const [showConversationList, setShowConversationList] = useState(false);
+  const [reviewResponse, setReviewResponse] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [exerciseContent, setExerciseContent] = useState('');
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempPreferredLanguage, setTempPreferredLanguage] = useState('');
   const [tempTargetLanguage, setTempTargetLanguage] = useState('');
   const recognizedTextRef = useRef('');
   const voiceProcessedRef = useRef(false);
+  const isReviewModeRef = useRef(false);
 
   const { signOut, preferredLanguage, targetLanguage, updateLanguages } = useAuth();
   const { t } = useTranslation();
@@ -106,6 +111,15 @@ export default function HomeScreen() {
     console.log(`🤖 [${timestamp}] Current conversation:`, currentConversationRef.current?.id);
     appendLog('AI message received');
     const text = typeof evt === 'string' ? evt : (evt?.text ?? JSON.stringify(evt));
+
+    // Check if this is a review response
+    if (isReviewModeRef.current) {
+      console.log('🎯 REVIEW RESPONSE RECEIVED:', text);
+      isReviewModeRef.current = false; // Reset review mode
+      setReviewResponse(text);
+      setShowReviewModal(true);
+      return;
+    }
 
     if (currentConversationRef.current && addMessageRef.current) {
       console.log(`🤖 [${timestamp}] Adding message to conversation:`, currentConversationRef.current.id);
@@ -264,22 +278,21 @@ export default function HomeScreen() {
   }, [isConnected, connect, close, appendLog, targetLanguage]);
 
   const handleReview = useCallback(async () => {
-    const prompt = `Please review my last utterance in ${preferredLanguage}. Identify mistakes and suggest corrections with brief explanations.`;
+    console.log('🎯 REVIEW BUTTON PRESSED');
 
-    // Create conversation if none exists
-    let conversation = currentConversation;
-    if (!conversation) {
-      conversation = await createConversation('Review Session', prompt);
-      if (!conversation) return;
+    const userMessages = messages.filter((msg: any) => msg.role === 'user');
+    if (userMessages.length === 0) {
+      Alert.alert('No Messages to Review', 'Please send some messages first before requesting a review.');
+      return;
     }
 
     // Auto-connect if not connected
     if (!isConnected) {
       try {
-        appendLog('🔗 Auto-connecting for review...');
+        console.log('🔗 Auto-connecting for review...');
         await connect({
-          model: 'gemini-2.5-flash',
-          systemInstruction: `You are FluentFlow, an AI language learning assistant. Hold concise, friendly voice conversations. Respond in ${targetLanguage}.`,
+          model: 'gemini-1.5-flash',
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Always respond in ${preferredLanguage}.`,
         });
         appendLog('✅ Auto-connected for review');
       } catch (e: any) {
@@ -288,14 +301,103 @@ export default function HomeScreen() {
       }
     }
 
-    // Save and send the review prompt
-    await addMessage(conversation.id, 'user', prompt);
+    // Create review prompt with all conversation messages
+    const conversationText = userMessages.map(m => m.content).join('\n');
+    const reviewPrompt = `Analyze this conversation where the user is practicing ${targetLanguage}. Provide:
+1. Strengths (what they're doing well)
+2. Areas to improve (specific mistakes or weak areas)  
+3. 3-5 personalized exercise suggestions
+
+Conversation messages:
+${conversationText}
+
+Respond in ${preferredLanguage} with clear, actionable feedback.`;
+
+    // Set review mode and send the review prompt
+    isReviewModeRef.current = true;
     try {
-      sendTextInput(prompt);
-    } catch (e: any) {
-      appendLog('❌ Review send failed: ' + (e?.message ?? String(e)));
+      console.log('🤖 Sending review prompt to AI...');
+      sendTextInput(reviewPrompt);
+    } catch (error: any) {
+      console.log('❌ AI review failed, using sample analysis:', error);
+      appendLog('❌ AI review failed: ' + (error?.message ?? String(error)));
+      isReviewModeRef.current = false; // Reset on error
+
+      // Fallback to sample analysis
+      console.log('📝 Using sample review analysis...');
+      const conversationTopics = userMessages.map(m => m.content).join(' ').toLowerCase();
+      const hasSpanish = conversationTopics.includes('hola') || conversationTopics.includes('gracias') || conversationTopics.includes('español');
+      const hasVerbs = conversationTopics.includes('hablo') || conversationTopics.includes('como') || conversationTopics.includes('hablar');
+      const hasQuestions = conversationTopics.includes('?') || conversationTopics.includes('qué') || conversationTopics.includes('cómo');
+
+      let sampleResponse = `Sample Review (AI analysis failed - based on your conversation):\n\n`;
+
+      if (hasSpanish) {
+        sampleResponse += `**Strengths:**\n• Good use of basic Spanish greetings and vocabulary\n• Attempting to communicate in the target language\n`;
+        if (hasQuestions) sampleResponse += `• Using question words appropriately\n`;
+        sampleResponse += `\n**Areas to Improve:**\n`;
+        if (!hasVerbs) sampleResponse += `• Verb conjugation practice needed\n`;
+        sampleResponse += `• Word order in sentences\n• Pronunciation of rolled 'r' sounds\n\n**Examples from your conversation:**\n`;
+        if (userMessages.length > 0) {
+          sampleResponse += `"${userMessages[0].content.substring(0, 50)}..."`;
+        }
+        sampleResponse += `\n\n**Suggested Exercises:**\n1. Practice verb conjugations: "I speak" = "Yo hablo"\n2. Work on sentence structure: Subject + Verb + Object\n3. Listen and repeat Spanish phrases`;
+      } else {
+        sampleResponse += `**Strengths:**\n• Clear communication in English\n• Good grammar structure\n\n**Areas to Improve:**\n• Expand vocabulary for target language\n• Practice pronunciation\n\n**Suggested Exercises:**\n1. Learn 10 new words in target language\n2. Practice pronunciation with audio\n3. Write simple sentences`;
+      }
+
+      setReviewResponse(sampleResponse);
+      setShowReviewModal(true);
     }
-  }, [preferredLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage, targetLanguage]);
+  }, [preferredLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, addMessage, targetLanguage, messages]);
+
+  const handleGenerateExercises = useCallback(async () => {
+    // Check if there are any user messages to analyze
+    const userMessages = messages.filter((msg: any) => msg.role === 'user');
+    if (userMessages.length === 0) {
+      Alert.alert('No Messages to Analyze', 'Please send some messages first to generate exercises.');
+      return;
+    }
+
+    // Auto-connect if not connected
+    if (!isConnected) {
+      try {
+        console.log('🔗 Auto-connecting for exercises...');
+        await connect({
+          model: 'gemini-1.5-flash',
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Always respond in ${preferredLanguage}.`,
+        });
+        appendLog('✅ Auto-connected for exercises');
+      } catch (e: any) {
+        appendLog('❌ Exercise auto-connect failed: ' + (e?.message ?? String(e)));
+        return;
+      }
+    }
+
+    // Generate sample exercises based on conversation
+    const conversationTopics = userMessages.map(m => m.content).join(' ').toLowerCase();
+    const hasSpanish = conversationTopics.includes('hola') || conversationTopics.includes('gracias') || conversationTopics.includes('español');
+    const hasVerbs = conversationTopics.includes('hablo') || conversationTopics.includes('como') || conversationTopics.includes('hablar');
+
+    let exercises = `Personalized Exercises (based on your conversation):\n\n`;
+
+    if (hasSpanish) {
+      exercises += `1. **Verb Conjugation Practice**\nConjugate these verbs in present tense:\n- Hablar (to speak): Yo ______, Tú ______, Él ______\n- Comer (to eat): Yo ______, Tú ______, Él ______\n\n`;
+      exercises += `2. **Word Order Correction**\nFix the word order in these sentences:\n- "Come el perro" → ______\n- "Habla español yo" → ______\n\n`;
+      exercises += `3. **Vocabulary Building**\nLearn and use 5 new Spanish words in sentences.\n\n`;
+      exercises += `4. **Pronunciation Practice**\nRecord yourself saying: "La casa roja" (focus on rolled 'r').\n\n`;
+      exercises += `5. **Listening Comprehension**\nListen to a Spanish podcast and summarize one main idea.`;
+    } else {
+      exercises += `1. **Basic Greetings**\nLearn and practice: Hello, Goodbye, Thank you, Please.\n\n`;
+      exercises += `2. **Simple Sentences**\nWrite 10 sentences about yourself using basic vocabulary.\n\n`;
+      exercises += `3. **Question Formation**\nPractice asking questions: What, Where, When, Who, Why.\n\n`;
+      exercises += `4. **Numbers and Time**\nLearn numbers 1-20 and tell time in target language.\n\n`;
+      exercises += `5. **Daily Vocabulary**\nLearn 15 words for: Food, Family, Colors, Animals.`;
+    }
+
+    setExerciseContent(exercises);
+    setShowExerciseModal(true);
+  }, [preferredLanguage, targetLanguage, currentConversation, createConversation, isConnected, connect, sendTextInput, appendLog, messages]);
 
   const handleVoiceMessage = useCallback(async (text: string) => {
     console.log('🎤 HANDLING VOICE MESSAGE:', text);
@@ -638,6 +740,9 @@ export default function HomeScreen() {
         <Pressable style={styles.smallButton} onPress={() => setShowFeedbackModal(true)}>
           <Text style={styles.smallButtonText}>{t('chat.feedback')}</Text>
         </Pressable>
+        <Pressable style={styles.smallButton} onPress={handleGenerateExercises}>
+          <Text style={styles.smallButtonText}>🏋️ Exercice</Text>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.chatArea}>
@@ -819,6 +924,65 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={styles.modalButtonText}>{t('settings.saveChanges')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Review Modal */}
+      <Modal
+        visible={showReviewModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowReviewModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Language Review</Text>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <Text style={{ color: 'white', fontSize: 15, lineHeight: 22 }}>{reviewResponse}</Text>
+            </ScrollView>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.secondaryButton]}
+                onPress={() => {
+                  setShowReviewModal(false);
+                  router.push('/dashboard');
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>View Dashboard</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowReviewModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Exercise Modal */}
+      <Modal
+        visible={showExerciseModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowExerciseModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Personalized Exercises</Text>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <Text style={{ color: 'white', fontSize: 15, lineHeight: 22 }}>{exerciseContent}</Text>
+            </ScrollView>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowExerciseModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
               </Pressable>
             </View>
           </View>

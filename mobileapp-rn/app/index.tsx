@@ -14,6 +14,373 @@ import { LanguageSelection } from '../components/LanguageSelection';
 import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '../contexts/NotificationContext';
+import { Switch } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const styles = StyleSheet.create({
+  // Notification settings
+  settingsSection: {
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  timePickerLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#374151',
+  },
+  timePickerText: {
+    fontSize: 16,
+    color: '#111827',
+    padding: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 6,
+    textAlign: 'center',
+  },
+  
+  // Main layout
+  safe: { 
+    flex: 1, 
+    backgroundColor: '#0b1020' 
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 16, 
+    paddingVertical: 12, 
+    backgroundColor: '#1a1f3a', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#2a2f4a' 
+  },
+  headerLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8,
+    flex: 1,
+  },
+  menuButton: { 
+    padding: 8 
+  },
+  menuText: { 
+    fontSize: 18 
+  },
+  
+  // Modal styles
+  modalOverlay: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.5)' 
+  },
+  modalContent: { 
+    backgroundColor: 'white', 
+    borderRadius: 12, 
+    padding: 20, 
+    width: '90%', 
+    maxWidth: 500 
+  },
+  modalTitle: { 
+    fontSize: 20, 
+    fontWeight: '600', 
+    marginBottom: 20, 
+    textAlign: 'center' 
+  },
+  modalInput: { 
+    borderWidth: 1, 
+    borderColor: '#D1D5DB', 
+    borderRadius: 8, 
+    padding: 12, 
+    marginBottom: 20, 
+    fontSize: 16 
+  },
+  modalButtons: { 
+    flexDirection: 'row', 
+    gap: 12 
+  },
+  modalButton: { 
+    flex: 1, 
+    paddingVertical: 12, 
+    borderRadius: 8, 
+    alignItems: 'center' 
+  },
+  cancelButton: { 
+    backgroundColor: '#374151' 
+  },
+  submitButton: { 
+    backgroundColor: '#2563EB' 
+  },
+  modalButtonText: { 
+    color: 'white', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  settingsScroll: { 
+    maxHeight: 400 
+  },
+  ttsButton: { 
+    backgroundColor: '#374151', 
+    padding: 16, 
+    borderRadius: 8, 
+    alignItems: 'center', 
+    marginTop: 8 
+  },
+  ttsButtonText: { 
+    color: '#D1D5DB', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  saveButton: { 
+    backgroundColor: '#10B981' 
+  },
+  ttsEnabled: {
+    backgroundColor: '#10B981',
+  },
+  
+  // Streak styles
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  streakItem: {
+    alignItems: 'center',
+    minWidth: 40,
+  },
+  streakEmoji: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  streakNumber: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  streakLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 10,
+  },
+  
+  // Header right styles
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+  },
+  settingsText: {
+    color: 'white',
+    fontSize: 14,
+  },
+  logoutButton: {
+    padding: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 14,
+  },
+  
+  // Extra controls
+  extraControls: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+    gap: 8,
+    backgroundColor: '#1a1f3a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2f4a',
+  },
+  smallButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#374151',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  smallButtonText: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  reviewButton: {
+    backgroundColor: '#4F46E5',
+  },
+  exerciseButton: {
+    backgroundColor: '#10B981',
+  },
+  
+  // Chat area styles
+  chatArea: {
+    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 80,
+  },
+  bubble: {
+    maxWidth: '80%',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+  },
+  bubbleUser: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#3B82F6',
+    borderBottomRightRadius: 4,
+  },
+  bubbleAI: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#374151',
+    borderBottomLeftRadius: 4,
+  },
+  bubbleText: {
+    color: 'white',
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  
+  // Bottom bar styles
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    paddingBottom: 24,
+    backgroundColor: '#1a1f3a',
+    borderTopWidth: 1,
+    borderTopColor: '#2a2f4a',
+  },
+  iconButton: {
+    padding: 10,
+    marginRight: 8,
+  },
+  iconText: {
+    fontSize: 24,
+  },
+  chatInput: {
+    flex: 1,
+    backgroundColor: '#2a2f4a',
+    color: 'white',
+    borderRadius: 20,
+    padding: 12,
+    paddingRight: 50,
+    fontSize: 16,
+    maxHeight: 100,
+  },
+  sendButton: {
+    position: 'absolute',
+    right: 24,
+    bottom: 24,
+    backgroundColor: '#3B82F6',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
+  // Feedback modal styles
+  ratingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1F2937',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  starButton: {
+    padding: 8,
+  },
+  starText: {
+    fontSize: 32,
+  },
+  commentLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1F2937',
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    backgroundColor: '#F9FAFB',
+  },
+  
+  // Settings section styles
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#1F2937',
+    flex: 1,
+  },
+  timePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginRight: 12,
+  },
+  timePickerButton: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  
+  // Title styles
+  title: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});
 
 export default function HomeScreen() {
   console.log('🚀 APP STARTED - Constants available:', !!Constants);
@@ -36,6 +403,66 @@ export default function HomeScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempPreferredLanguage, setTempPreferredLanguage] = useState('');
   const [tempTargetLanguage, setTempTargetLanguage] = useState('');
+  
+  // Notification settings
+  const { 
+    hasNotificationPermission, 
+    scheduleDailyReminder, 
+    cancelAllNotifications, 
+    notificationTime = new Date(),
+    setNotificationTime = () => {},
+    isNotificationScheduled = false,
+    requestNotificationPermission = async () => false
+  } = useNotifications() || {};
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(isNotificationScheduled);
+  
+  const handleNotificationToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        await scheduleDailyReminder(notificationTime);
+        setNotificationsEnabled(true);
+      } else {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive daily reminders.'
+        );
+      }
+    } else {
+      await cancelAllNotifications();
+      setNotificationsEnabled(false);
+    }
+  };
+  
+  const toggleNotifications = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        await scheduleDailyReminder(notificationTime);
+        setNotificationsEnabled(true);
+      } else {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive daily reminders.'
+        );
+        setNotificationsEnabled(false);
+      }
+    } else {
+      await cancelAllNotifications();
+      setNotificationsEnabled(false);
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      setNotificationTime(selectedTime);
+      if (notificationsEnabled) {
+        scheduleDailyReminder(selectedTime);
+      }
+    }
+  };
   const recognizedTextRef = useRef('');
   const voiceProcessedRef = useRef(false);
   const isReviewModeRef = useRef(false);
@@ -142,9 +569,9 @@ export default function HomeScreen() {
     }
 
     // Add message to conversation
-    if (currentConv && addMessage) {
-      console.log(`📤 [${Date.now()}] Adding message to conversation:`, currentConv.id);
-      await addMessage(currentConv.id, 'assistant', text);
+    if (currentConversation && addMessage) {
+      console.log(`📤 [${Date.now()}] Adding message to conversation:`, currentConversation.id);
+      await addMessage(currentConversation.id, 'assistant', text);
       console.log(`🤖 [${aiMessageTimestamp}] Message added successfully`);
 
       // Speak the response if TTS is enabled
@@ -486,11 +913,11 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
     console.log(`📤 [${Date.now()}] TEXT FOUND - proceeding with:`, text);
 
     // Create conversation if none exists
-    let currentConv = currentConversation;
-    if (!currentConv) {
+    let targetConversation = currentConversation;
+    if (!targetConversation) {
       console.log('📤 handleSend: no current conversation, creating one');
-      currentConv = await createConversation(text.substring(0, 50) + '...', text);
-      if (!currentConv) {
+      targetConversation = await createConversation(text.substring(0, 50) + '...', text);
+      if (!targetConversation) {
         console.log('📤 handleSend: failed to create conversation');
         return;
       }
@@ -881,8 +1308,44 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
                 onSelectLanguage={setTempTargetLanguage}
               />
 
-              <View style={styles.ttsSection}>
-                <Text style={styles.ttsTitle}>{t('settings.textToSpeech')}</Text>
+              {/* Notification Settings */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Notifications</Text>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>Daily Reminder</Text>
+                  <Switch
+                    value={notificationsEnabled}
+                    onValueChange={handleNotificationToggle}
+                    trackColor={{ false: '#767577', true: '#81b0ff' }}
+                    thumbColor={notificationsEnabled ? '#f5dd4b' : '#f4f3f4'}
+                  />
+                </View>
+                
+                {notificationsEnabled && (
+                  <View style={styles.timePickerContainer}>
+                    <Text style={styles.timeLabel}>Reminder Time</Text>
+                    <Pressable 
+                      style={styles.timePickerButton}
+                      onPress={() => setShowTimePicker(true)}
+                    >
+                      <Text style={styles.timeText}>
+                        {notificationTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </Pressable>
+                    {showTimePicker && (
+                      <DateTimePicker
+                        value={notificationTime}
+                        mode="time"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={handleTimeChange}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('settings.textToSpeech')}</Text>
                 <Pressable
                   style={[styles.ttsButton, ttsEnabled && styles.ttsEnabled]}
                   onPress={() => setTtsEnabled(!ttsEnabled)}
@@ -892,7 +1355,47 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
                   </Text>
                 </Pressable>
 
-                {/* Debug button */}
+                </View>
+
+              {/* Notification Settings */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
+                
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>{t('settings.dailyReminder')}</Text>
+                  <Switch
+                    value={notificationsEnabled}
+                    onValueChange={toggleNotifications}
+                    trackColor={{ false: '#767577', true: '#81b0ff' }}
+                    thumbColor={notificationsEnabled ? '#f5dd4b' : '#f4f3f4'}
+                  />
+                </View>
+
+                {notificationsEnabled && (
+                  <View style={styles.timePickerContainer}>
+                    <Text style={styles.timePickerLabel}>{t('settings.reminderTime')}</Text>
+                    <Pressable 
+                      style={styles.timePickerButton}
+                      onPress={() => setShowTimePicker(true)}
+                    >
+                      <Text style={styles.timePickerText}>
+                        {notificationTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </Pressable>
+                    {showTimePicker && (
+                      <DateTimePicker
+                        value={notificationTime}
+                        mode="time"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onTimeChange}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+
+              {/* Debug button */}
+              <View style={styles.settingsSection}>
                 <Pressable
                   style={[styles.ttsButton, { backgroundColor: '#F59E0B', marginTop: 10 }]}
                   onPress={async () => {
@@ -955,214 +1458,6 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
           </View>
         </View>
       </Modal>
-
-      {/* Review Modal */}
-      <Modal
-        visible={showReviewModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowReviewModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Language Review</Text>
-            <ScrollView style={{ maxHeight: 400 }}>
-              <Text style={{ color: 'white', fontSize: 15, lineHeight: 22 }}>{reviewResponse}</Text>
-            </ScrollView>
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.secondaryButton]}
-                onPress={() => {
-                  setShowReviewModal(false);
-                  router.push('/dashboard');
-                }}
-              >
-                <Text style={styles.secondaryButtonText}>View Dashboard</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowReviewModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Close</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Exercise Modal */}
-      <Modal
-        visible={showExerciseModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowExerciseModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Personalized Exercises</Text>
-            <ScrollView style={{ maxHeight: 400 }}>
-              <Text style={{ color: 'white', fontSize: 15, lineHeight: 22 }}>{exerciseContent}</Text>
-            </ScrollView>
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowExerciseModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Close</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <ConversationList
-        visible={showConversationList}
-        onClose={() => {
-          console.log('🟥 CONVERSATION LIST onClose called - setting showConversationList to false');
-          setShowConversationList(false);
-        }}
-        onSelectConversation={handleSelectConversation}
-      />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0b1020' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#1a1f3a', borderBottomWidth: 1, borderBottomColor: '#2a2f4a' },
-  headerLeft: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8,
-    flex: 1,
-  },
-  menuButton: { padding: 8 },
-  menuText: { fontSize: 18 },
-  title: { fontSize: 20, fontWeight: '700', color: 'white' },
-  headerRight: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
-  streakContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  streakItem: {
-    alignItems: 'center',
-    minWidth: 40,
-  },
-  streakEmoji: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  streakNumber: {
-    color: '#FFD700',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  streakLabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 10,
-  },
-  settingsButton: { padding: 8 },
-  settingsText: { fontSize: 18 },
-  logoutButton: { padding: 8 },
-  logoutText: { fontSize: 18 },
-  secondaryButton: {
-    backgroundColor: '#374151',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  secondaryButtonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  chatArea: { padding: 16, gap: 8 },
-  bubble: { maxWidth: '80%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16 },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#2563EB' },
-  bubbleAI: { alignSelf: 'flex-start', backgroundColor: '#374151' },
-  bubbleText: { color: 'white', fontSize: 15 },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#1a1f3a', borderTopWidth: 1, borderTopColor: '#2a2f4a', gap: 8 },
-  iconButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#374151', borderRadius: 20 },
-  iconText: { fontSize: 20 },
-  chatInput: { flex: 1, backgroundColor: '#111827', color: 'white', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, fontSize: 15 },
-  sendButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2563EB', borderRadius: 20 },
-  sendButtonText: { color: 'white', fontSize: 20, fontWeight: '700' },
-  extraControls: { 
-    flexDirection: 'row', 
-    paddingHorizontal: 12, 
-    paddingVertical: 12, 
-    paddingBottom: 20,
-    gap: 6, 
-    backgroundColor: '#0b1020',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  smallButton: { 
-    flex: 1,
-    minWidth: 80,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    backgroundColor: '#374151',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#4B5563',
-  },
-  smallButtonText: { 
-    color: 'white', 
-    fontSize: 12, 
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  reviewButton: {
-    backgroundColor: '#2563EB',
-    borderColor: '#3B82F6',
-  },
-  exerciseButton: {
-    backgroundColor: '#10B981',
-    borderColor: '#34D399',
-  },
-  ttsEnabled: {
-    backgroundColor: '#10B981',
-    borderColor: '#34D399',
-  },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#1a1f3a', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' },
-  ratingLabel: { fontSize: 16, color: '#D1D5DB', marginBottom: 12, fontWeight: '600' },
-  starsContainer: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
-  starButton: { padding: 4 },
-  starText: { fontSize: 36 },
-  commentLabel: { fontSize: 16, color: '#D1D5DB', marginBottom: 8, fontWeight: '600' },
-  commentInput: { backgroundColor: '#0b1020', color: 'white', borderRadius: 8, padding: 12, fontSize: 15, minHeight: 100, borderWidth: 1, borderColor: '#374151', marginBottom: 24 },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  cancelButton: { backgroundColor: '#374151' },
-  submitButton: { backgroundColor: '#2563EB' },
-  modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
-  settingsScroll: { maxHeight: 400 },
-  ttsSection: { marginTop: 20, paddingHorizontal: 20 },
-  ttsTitle: { fontSize: 18, fontWeight: '600', color: '#D1D5DB', marginBottom: 12, textAlign: 'center' },
-  ttsButton: { backgroundColor: '#374151', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  ttsButtonText: { color: '#D1D5DB', fontSize: 16, fontWeight: '600' },
-  saveButton: { backgroundColor: '#10B981' },
-  ttsEnabled: {
-    backgroundColor: '#10B981', // Green when enabled
-  },
-});

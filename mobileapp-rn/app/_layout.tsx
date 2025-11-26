@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { StreakProvider } from '../contexts/StreakContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
 
 function RootLayoutNav() {
   const { user, loading } = useAuth();
@@ -59,9 +60,11 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StreakProvider>
-        <RootLayoutNav />
-      </StreakProvider>
+      <NotificationProvider>
+        <StreakProvider>
+          <RootLayoutNav />
+        </StreakProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

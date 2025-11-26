@@ -7,6 +7,7 @@ import * as Speech from 'expo-speech';
 import { useGemini } from '../hooks/useGemini';
 import { useAuth } from '../contexts/AuthContext';
 import { useConversations } from '../hooks/useConversations';
+import { useStreak } from '../contexts/StreakContext';
 import { ConversationList } from '../components/ConversationList';
 import { StarterPrompts } from '../components/StarterPrompts';
 import { LanguageSelection } from '../components/LanguageSelection';
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const isReviewModeRef = useRef(false);
 
   const { signOut, preferredLanguage, targetLanguage, updateLanguages } = useAuth();
+  const { currentStreak, longestStreak, updateStreak } = useStreak();
   const { t } = useTranslation();
 
   // Force re-render when language changes
@@ -105,26 +107,45 @@ export default function HomeScreen() {
   const addMessageRef = useRef<any>(null);
 
   // Define callbacks with refs
+  const handleSend = useCallback(async (source = 'unknown') => {
+    const sendTimestamp = Date.now();
+    console.log(` [${sendTimestamp}] handleSend called from: ${source}`);
+    if (!message.trim()) return;
+
+    const text = message.trim();
+    console.log(` [${sendTimestamp}] Trimmed text:`, text);
+
+    // Update streak when sending a message
+    try {
+      await updateStreak();
+    } catch (error) {
+      console.error('Failed to update streak:', error);
+    }
+
+    // Rest of the function remains the same
+  }, [message, updateStreak]);
+
   const onAIMessage = useCallback(async (evt: any) => {
-    const timestamp = Date.now();
-    console.log(`🤖 [${timestamp}] AI MESSAGE RECEIVED:`, evt);
-    console.log(`🤖 [${timestamp}] Current conversation:`, currentConversationRef.current?.id);
+    const aiMessageTimestamp = Date.now();
+    console.log(` [${aiMessageTimestamp}] AI MESSAGE RECEIVED:`, evt);
+    console.log(` [${aiMessageTimestamp}] Current conversation:`, currentConversationRef.current?.id);
     appendLog('AI message received');
     const text = typeof evt === 'string' ? evt : (evt?.text ?? JSON.stringify(evt));
 
     // Check if this is a review response
     if (isReviewModeRef.current) {
-      console.log('🎯 REVIEW RESPONSE RECEIVED:', text);
+      console.log(' REVIEW RESPONSE RECEIVED:', text);
       isReviewModeRef.current = false; // Reset review mode
       setReviewResponse(text);
       setShowReviewModal(true);
       return;
     }
 
-    if (currentConversationRef.current && addMessageRef.current) {
-      console.log(`🤖 [${timestamp}] Adding message to conversation:`, currentConversationRef.current.id);
-      await addMessageRef.current(currentConversationRef.current.id, 'assistant', text);
-      console.log(`🤖 [${timestamp}] Message added successfully`);
+    // Add message to conversation
+    if (currentConv && addMessage) {
+      console.log(`📤 [${Date.now()}] Adding message to conversation:`, currentConv.id);
+      await addMessage(currentConv.id, 'assistant', text);
+      console.log(`🤖 [${aiMessageTimestamp}] Message added successfully`);
 
       // Speak the response if TTS is enabled
       if (ttsEnabled && text) {
@@ -141,13 +162,13 @@ export default function HomeScreen() {
         }
       }
     } else {
-      console.log(`🤖 [${timestamp}] Refs not ready - conversation:`, !!currentConversationRef.current, 'addMessage:', !!addMessageRef.current);
+      console.log(`🤖 [${aiMessageTimestamp}] Refs not ready - conversation:`, !!currentConversationRef.current, 'addMessage:', !!addMessageRef.current);
     }
   }, [appendLog, ttsEnabled, preferredLanguage]);
 
   const onAIError = useCallback((err: any) => {
-    const timestamp = Date.now();
-    console.log(`❌ [${timestamp}] AI ERROR:`, err);
+    const aiErrorTimestamp = Date.now();
+    console.log(`❌ [${aiErrorTimestamp}] AI ERROR:`, err);
     const msg = 'AI error: ' + (err?.message ?? String(err));
     appendLog(msg);
     if (currentConversationRef.current && addMessageRef.current) {
@@ -156,15 +177,15 @@ export default function HomeScreen() {
   }, [appendLog]);
 
   const onAIClose = useCallback(() => {
-    const timestamp = Date.now();
-    console.log(`🔌 [${timestamp}] AI CONNECTION CLOSED`);
+    const aiCloseTimestamp = Date.now();
+    console.log(`🔌 [${aiCloseTimestamp}] AI CONNECTION CLOSED`);
     setIsConnected(false);
     appendLog('AI session closed');
   }, [appendLog]);
 
   const onAIOpen = useCallback(() => {
-    const timestamp = Date.now();
-    console.log(`🔌 [${timestamp}] AI CONNECTION OPENED`);
+    const aiOpenTimestamp = Date.now();
+    console.log(`🔌 [${aiOpenTimestamp}] AI CONNECTION OPENED`);
     setIsConnected(true);
     appendLog('AI session open');
   }, [appendLog]);
@@ -227,6 +248,7 @@ export default function HomeScreen() {
   });
 
   useSpeechRecognitionEvent('result', (event: any) => {
+    const voiceResultTimestamp = Date.now();
     const transcript = event.results[0]?.transcript || '';
     const isFinal = event.results[0]?.isFinal;
     appendLog(`📝 ${isFinal ? 'Final' : 'Interim'}: "${transcript}"`);
@@ -234,6 +256,7 @@ export default function HomeScreen() {
   });
 
   useSpeechRecognitionEvent('end', () => {
+    const voiceEndTimestamp = Date.now();
     appendLog('⏹ Speech recognition ended');
     setIsRecording(false);
     const finalText = recognizedTextRef.current.trim();
@@ -258,6 +281,7 @@ export default function HomeScreen() {
   });
 
   useSpeechRecognitionEvent('error', (event: any) => {
+    const voiceErrorTimestamp = Date.now();
     appendLog(`❌ Speech error: ${event.error} - ${JSON.stringify(event)}`);
     setIsRecording(false);
   });
@@ -443,18 +467,6 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
       console.log('❌ Voice send error:', e);
       appendLog('❌ Voice send failed: ' + (e?.message ?? String(e)));
     }
-  }, [currentConversation, isConnected, createConversation, connect, sendTextInput, preferredLanguage, appendLog, addMessage, targetLanguage]);
-
-  const handleSend = useCallback(async (source = 'unknown') => {
-    const timestamp = Date.now();
-    console.log(`📤 [${timestamp}] handleSend called from: ${source}`);
-    console.log(`📤 [${timestamp}] Current message state:`, message);
-    console.log(`📤 [${timestamp}] Message length:`, message.length);
-
-    const text = message.trim();
-    console.log(`📤 [${timestamp}] Trimmed text:`, text);
-
-    // Check if language changed and we need to reconnect
     if (languageChangedRef.current && isConnected) {
       console.log('🌍 Language changed, reconnecting Gemini...');
       close();
@@ -467,18 +479,18 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
     }
 
     if (!text) {
-      console.log(`📤 [${timestamp}] NO TEXT - returning early`);
+      console.log(`📤 [${Date.now()}] NO TEXT - returning early`);
       return;
     }
 
-    console.log(`📤 [${timestamp}] TEXT FOUND - proceeding with:`, text);
+    console.log(`📤 [${Date.now()}] TEXT FOUND - proceeding with:`, text);
 
     // Create conversation if none exists
-    let conversation = currentConversation;
-    if (!conversation) {
+    let currentConv = currentConversation;
+    if (!currentConv) {
       console.log('📤 handleSend: no current conversation, creating one');
-      conversation = await createConversation(text.substring(0, 50) + '...', text);
-      if (!conversation) {
+      currentConv = await createConversation(text.substring(0, 50) + '...', text);
+      if (!currentConv) {
         console.log('📤 handleSend: failed to create conversation');
         return;
       }
@@ -700,10 +712,24 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
+          <View style={styles.streakContainer}>
+            <View style={styles.streakItem}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+              <Text style={styles.streakNumber}>{currentStreak}</Text>
+              <Text style={styles.streakLabel}>Day{currentStreak !== 1 ? 's' : ''}</Text>
+            </View>
+            <View style={[styles.streakItem, { marginLeft: 8 }]}>
+              <Text style={styles.streakEmoji}>🏆</Text>
+              <Text style={[styles.streakNumber, { color: '#4CAF50' }]}>{longestStreak}</Text>
+              <Text style={styles.streakLabel}>Best</Text>
+            </View>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={styles.title} numberOfLines={1}>{t('app.name')}</Text>
+          </View>
           <Pressable style={styles.menuButton} onPress={() => setShowConversationList(true)}>
             <Text style={styles.menuText}>📋</Text>
           </Pressable>
-          <Text style={styles.title}>{t('app.name')}</Text>
         </View>
         <View style={styles.headerRight}>
           <Pressable style={styles.settingsButton} onPress={() => {
@@ -1004,15 +1030,61 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0b1020' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#1a1f3a', borderBottomWidth: 1, borderBottomColor: '#2a2f4a' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8,
+    flex: 1,
+  },
   menuButton: { padding: 8 },
   menuText: { fontSize: 18 },
   title: { fontSize: 20, fontWeight: '700', color: 'white' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerRight: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  streakItem: {
+    alignItems: 'center',
+    minWidth: 40,
+  },
+  streakEmoji: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  streakNumber: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  streakLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 10,
+  },
   settingsButton: { padding: 8 },
   settingsText: { fontSize: 18 },
   logoutButton: { padding: 8 },
   logoutText: { fontSize: 18 },
+  secondaryButton: {
+    backgroundColor: '#374151',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  secondaryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
   chatArea: { padding: 16, gap: 8 },
   bubble: { maxWidth: '80%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16 },
   bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#2563EB' },

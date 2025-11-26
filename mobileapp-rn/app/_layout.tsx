@@ -1,6 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
+import { useEffect } from 'react';
 import '../lib/i18n'; // Initialize i18n
 import 'react-native-reanimated';
 
@@ -10,31 +12,42 @@ import { StreakProvider } from '../contexts/StreakContext';
 
 function RootLayoutNav() {
   const { user, loading } = useAuth();
+  const router = useRouter();
 
   console.log('🎯 LAYOUT RENDER - user:', user?.email || 'null', 'loading:', loading, 'timestamp:', Date.now());
   console.log('🎯 LAYOUT RENDER - user exists:', !!user);
 
+  // Redirect to auth if not loading and no user
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('🎯 No user found, redirecting to auth');
+      router.replace('/auth');
+    } else if (!loading && user) {
+      console.log('🎯 User found, redirecting to home');
+      router.replace('/');
+    }
+  }, [user, loading, router]);
+
   if (loading) {
     console.log('🎯 LAYOUT: Still loading, showing nothing');
-    return null; // Or show a loading screen
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0b1020' }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
   }
-
-  console.log('🎯 LAYOUT: Loading complete, user present:', !!user, 'will show:', user ? 'MAIN APP' : 'LOGIN');
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <Stack>
-        {user ? (
-          <>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </>
-        ) : (
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-        )}
+      <Stack screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+      }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Switch, Platform, TouchableOpacity, Alert, Button } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 const Settings = () => {
   const { t } = useTranslation();
   const { signOut } = useAuth();
+  const router = useRouter();
   const { 
     scheduleDailyReminder, 
     cancelAllNotifications, 
@@ -125,6 +126,13 @@ const Settings = () => {
         </View>
       )}
 
+      <TouchableOpacity 
+        style={styles.adminButton} 
+        onPress={() => router.push('/admin')}
+      >
+        <Text style={styles.adminButtonText}>Admin Panel</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
         <Text style={styles.signOutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
@@ -161,10 +169,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  signOutButton: {
+  adminButton: {
     marginTop: 30,
+    backgroundColor: '#4F46E5',
     padding: 15,
-    backgroundColor: '#ff3b30',
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  adminButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signOutButton: {
+    backgroundColor: '#2a2f45',
+    padding: 15,
     borderRadius: 8,
     alignItems: 'center',
   },

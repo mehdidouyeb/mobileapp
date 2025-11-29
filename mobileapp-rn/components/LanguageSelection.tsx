@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface LanguageSelectionProps {
   title: string;
   selectedLanguage: string;
   onSelectLanguage: (language: string) => void;
 }
+
+const CONTAINER_PADDING = 16;
+const ITEM_HEIGHT = 60;
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -23,76 +27,95 @@ const languages = [
 ];
 
 export function LanguageSelection({ title, selectedLanguage, onSelectLanguage }: LanguageSelectionProps) {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom + 20 }]}>
       <Text style={styles.title}>{title}</Text>
-      <View style={styles.grid}>
-        {languages.map((lang) => (
-          <Pressable
-            key={lang.code}
-            style={[
-              styles.languageButton,
-              selectedLanguage === lang.code && styles.selectedButton,
-            ]}
-            onPress={() => onSelectLanguage(lang.code)}
-          >
-            <Text style={styles.flag}>{lang.flag}</Text>
-            <Text style={[
-              styles.languageName,
-              selectedLanguage === lang.code && styles.selectedText,
-            ]}>
-              {lang.name}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {languages.map((lang) => {
+          const isSelected = selectedLanguage === lang.code;
+          
+          return (
+            <Pressable
+              key={lang.code}
+              style={({ pressed }) => [
+                styles.languageButton,
+                isSelected && styles.selectedButton,
+                pressed && !isSelected && styles.pressedButton
+              ]}
+              onPress={() => onSelectLanguage(lang.code)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${lang.name} language`}
+            >
+              <Text style={[styles.flag, isSelected && styles.selectedText]}>{lang.flag}</Text>
+              <Text style={[styles.languageName, isSelected && styles.selectedText]}>
+                {lang.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    height: 300, // Fixed height to ensure visibility
+    padding: CONTAINER_PADDING,
+    backgroundColor: '#0b1020',
     marginBottom: 20,
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
+    color: '#E5E7EB',
     marginBottom: 16,
     textAlign: 'center',
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  scrollView: {
+    flexGrow: 0, // Prevent the ScrollView from taking up all available space
+  },
+  scrollContent: {
+    paddingBottom: 20,
+    paddingHorizontal: 8, // Add some horizontal padding
   },
   languageButton: {
-    width: '30%',
-    aspectRatio: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
   selectedButton: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#2563EB',
+    backgroundColor: '#1E40AF',
+    borderColor: '#3B82F6',
+  },
+  pressedButton: {
+    opacity: 0.8,
   },
   flag: {
     fontSize: 24,
-    marginBottom: 4,
+    marginRight: 12,
+    width: 32,
+    textAlign: 'center',
   },
   languageName: {
-    fontSize: 12,
+    fontSize: 16,
+    color: '#E5E7EB',
     fontWeight: '500',
-    color: '#374151',
-    textAlign: 'center',
   },
   selectedText: {
     color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

@@ -602,6 +602,7 @@ export default function HomeScreen() {
   // Hook declarations - now come after callbacks
   const {
     currentConversation,
+    conversations,
     messages,
     createConversation,
     addMessage,
@@ -609,6 +610,12 @@ export default function HomeScreen() {
     setCurrentConversation,
     setMessages,
   } = useConversations();
+
+  // Debug: Log when conversations are loaded
+  useEffect(() => {
+    console.log('📋 Conversations loaded:', conversations.length, 'conversations');
+    console.log('📋 Current conversation:', currentConversation?.id || 'None');
+  }, [conversations, currentConversation]);
 
   const { connect, sendTextInput, close } = useGemini({
     onOpen: onAIOpen,
@@ -1201,7 +1208,11 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={styles.title} numberOfLines={1}>{t('app.name')}</Text>
           </View>
-          <Pressable style={styles.menuButton} onPress={() => setShowConversationList(true)}>
+          <Pressable style={styles.menuButton} onPress={() => {
+          console.log('📋 Conversations button pressed');
+          console.log('📋 Available conversations:', conversations.length);
+          setShowConversationList(true);
+        }}>
             <Text style={styles.menuText}>📋</Text>
           </Pressable>
         </View>
@@ -1505,6 +1516,22 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
           </View>
         </View>
       </Modal>
+
+      {/* Conversation List Modal */}
+      <ConversationList
+        visible={showConversationList}
+        onClose={() => setShowConversationList(false)}
+        onSelectConversation={(conversation) => {
+          console.log('📋 Conversation selected:', conversation);
+          setCurrentConversation(conversation);
+          setShowConversationList(false);
+          loadMessages(conversation.id).then(() => {
+            console.log('📋 Messages loaded for conversation:', conversation.id);
+          }).catch(error => {
+            console.error('📋 Error loading messages:', error);
+          });
+        }}
+      />
     </SafeAreaView>
   );
 }

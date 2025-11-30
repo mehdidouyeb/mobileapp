@@ -533,25 +533,7 @@ export default function HomeScreen() {
   const currentConversationRef = useRef<any>(null);
   const addMessageRef = useRef<any>(null);
 
-  // Define callbacks with refs
-  const handleSend = useCallback(async (source = 'unknown') => {
-    const sendTimestamp = Date.now();
-    console.log(` [${sendTimestamp}] handleSend called from: ${source}`);
-    if (!message.trim()) return;
-
-    const text = message.trim();
-    console.log(` [${sendTimestamp}] Trimmed text:`, text);
-
-    // Update streak when sending a message
-    try {
-      await updateStreak();
-    } catch (error) {
-      console.error('Failed to update streak:', error);
-    }
-
-    // Rest of the function remains the same
-  }, [message, updateStreak]);
-
+  // Define callbacks first (they need to be declared before hooks that use them)
   const onAIMessage = useCallback(async (evt: any) => {
     const aiMessageTimestamp = Date.now();
     console.log(` [${aiMessageTimestamp}] AI MESSAGE RECEIVED:`, evt);
@@ -569,9 +551,9 @@ export default function HomeScreen() {
     }
 
     // Add message to conversation
-    if (currentConversation && addMessage) {
-      console.log(`📤 [${Date.now()}] Adding message to conversation:`, currentConversation.id);
-      await addMessage(currentConversation.id, 'assistant', text);
+    if (currentConversationRef.current && addMessageRef.current) {
+      console.log(`📤 [${Date.now()}] Adding message to conversation:`, currentConversationRef.current.id);
+      await addMessageRef.current(currentConversationRef.current.id, 'assistant', text);
       console.log(`🤖 [${aiMessageTimestamp}] Message added successfully`);
 
       // Speak the response if TTS is enabled
@@ -617,6 +599,7 @@ export default function HomeScreen() {
     appendLog('AI session open');
   }, [appendLog]);
 
+  // Hook declarations - now come after callbacks
   const {
     currentConversation,
     messages,
@@ -639,6 +622,70 @@ export default function HomeScreen() {
     currentConversationRef.current = currentConversation;
     addMessageRef.current = addMessage;
   }, [currentConversation, addMessage]);
+
+  // Define callbacks with refs
+  const handleSend = useCallback(async (source = 'unknown') => {
+    const sendTimestamp = Date.now();
+    console.log(` [${sendTimestamp}] handleSend called from: ${source}`);
+    if (!message.trim()) return;
+
+    const text = message.trim();
+    console.log(` [${sendTimestamp}] Trimmed text:`, text);
+
+    // Update streak when sending a message
+    try {
+      await updateStreak();
+    } catch (error) {
+      console.error('Failed to update streak:', error);
+    }
+
+    // Create conversation if none exists
+    let conversation = currentConversation;
+    if (!conversation) {
+      console.log('📝 Creating new conversation for message');
+      conversation = await createConversation(text.substring(0, 30) + (text.length > 30 ? '...' : ''));
+      if (!conversation) {
+        console.error('Failed to create conversation');
+        return;
+      }
+      setCurrentConversation(conversation);
+    }
+
+    // Auto-connect if not connected
+    if (!isConnected) {
+      try {
+        console.log('🔗 Auto-connecting to AI...');
+        await connect({
+          model: 'gemini-2.5-flash',
+          systemInstruction: `You are FluentFlow, an AI language learning assistant. Always respond in ${targetLanguage || 'English'}.`
+        });
+      } catch (error) {
+        console.error('Failed to connect to AI:', error);
+        Alert.alert('Connection Error', 'Failed to connect to the AI service. Please try again.');
+        return;
+      }
+    }
+
+    // Save user message
+    console.log('💾 Saving user message to DB');
+    const userMessage = await addMessage(conversation.id, 'user', text);
+    if (!userMessage) {
+      console.error('Failed to save user message');
+      return;
+    }
+
+    // Clear input
+    setMessage('');
+
+    // Send to AI
+    try {
+      console.log('📤 Sending message to AI:', text);
+      sendTextInput(text);
+    } catch (error) {
+      console.error('Error sending message to AI:', error);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
+    }
+  }, [message, currentConversation, isConnected, connect, createConversation, addMessage, setCurrentConversation, sendTextInput, targetLanguage, updateStreak]);
 
   const handleSignOut = async () => {
     console.log('🚪 LOGOUT BUTTON PRESSED');
@@ -815,7 +862,7 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
       try {
         console.log('🔗 Auto-connecting for exercises...');
         await connect({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.5-flash',
           systemInstruction: `You are FluentFlow, an AI language learning assistant. Always respond in ${preferredLanguage}.`,
         });
         appendLog('✅ Auto-connected for exercises');
@@ -1387,7 +1434,7 @@ Respond in ${preferredLanguage} with clear, actionable feedback.`;
                         value={notificationTime}
                         mode="time"
                         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={onTimeChange}
+                        onChange={handleTimeChange}
                       />
                     )}
                   </View>

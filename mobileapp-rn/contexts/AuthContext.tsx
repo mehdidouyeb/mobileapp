@@ -3,6 +3,16 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import i18n from '../lib/i18n';
 
+interface SignInResponse {
+  error?: Error;
+  originalError?: any;
+  data?: {
+    user: User;
+    session: Session;
+    weakPassword?: any;
+  } | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -10,7 +20,7 @@ interface AuthContextType {
   preferredLanguage: string;
   targetLanguage: string;
   signUp: (email: string, password: string, preferredLanguage?: string, targetLanguage?: string) => Promise<{ error?: any }>;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signIn: (email: string, password: string) => Promise<SignInResponse>;
   signOut: () => Promise<{ error?: any }>;
   updateLanguages: (preferred: string, target: string) => Promise<{ error?: any }>;
   resetPassword: (email: string) => Promise<{ error?: any }>;
@@ -37,18 +47,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('🔐 AUTH PROVIDER useEffect STARTING');
+    setLoading(true);
 
-    // Force sign out on app start to always go to login
-    console.log('🔐 FORCING SIGN OUT ON APP START');
-    supabase.auth.signOut().then(() => {
-      console.log('🔐 SIGN OUT COMPLETE - SETTING STATE');
-      setUser(null);
-      setSession(null);
+    // Check for existing session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔐 Initial session check:', session ? 'Found session' : 'No session found');
+      setSession(session);
+      setUser(session?.user ?? null);
       setLoading(false);
-    }).catch((error) => {
-      console.log('🔐 SIGN OUT ERROR:', error);
-      setUser(null);
-      setSession(null);
+    }).catch(error => {
+      console.error('🔐 Error getting session:', error);
       setLoading(false);
     });
 
@@ -178,12 +186,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+  const signIn = async (email: string, password: string): Promise<SignInResponse> => {
+    console.log('🔐 Attempting sign in with:', email);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      console.log('🔐 Sign in response:', { 
+        user: data?.user?.email, 
+        session: !!data?.session,
+        error: error?.message 
+      });
+
+      if (error) {
+        // Map common error codes to user-friendly messages
+        let errorMessage = error.message;
+        
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Incorrect email or password. Please try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please verify your email before signing in. Check your inbox.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please try again later.';
+        } else if (error.message.includes('database error granting user')) {
+          errorMessage = 'There was an issue accessing your account. Please try again or contact support.';
+        }
+
+        console.error('🔴 Sign in error details:', {
+          code: error.name,
+          message: error.message,
+          status: (error as any).status,
+          timestamp: new Date().toISOString()
+        });
+
+        return { 
+          error: new Error(errorMessage),
+          originalError: error,
+          data: null
+        };
+      }
+
+      if (!data) {
+        return {
+          error: new Error('No data returned from authentication'),
+          originalError: new Error('No data returned from authentication'),
+          data: null
+        };
+      }
+
+      return { 
+        data: {
+          user: data.user!,
+          session: data.session!,
+          weakPassword: (data as any).weakPassword
+        },
+        error: undefined,
+        originalError: undefined
+      };
+
+    } catch (error) {
+      console.error('🔥 Unexpected sign in error:', error);
+      return { 
+        error: error instanceof Error 
+          ? error 
+          : new Error('An unexpected error occurred during sign in'),
+        originalError: error,
+        data: null
+      };
+    }
   };
 
   const signOut = async () => {

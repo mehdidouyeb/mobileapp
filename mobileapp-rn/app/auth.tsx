@@ -54,29 +54,71 @@ export default function AuthScreen({ navigation }: any) {
       if (isSignUp) {
         const { error } = await signUp(email, password, preferredLanguage, targetLanguage);
         if (error) {
+          console.error('❌ Sign up error:', error);
           Alert.alert(t('settings.updateFailed'), error.message);
         } else {
+          console.log('✅ Account created successfully');
           Alert.alert(
             t('auth.accountCreated'),
             t('auth.accountCreated'),
-            [{ text: 'OK', onPress: () => {
-              setIsSignUp(false);
-              setCurrentStep('credentials');
-            }}]
+            [{ 
+              text: 'OK', 
+              onPress: () => {
+                console.log('👤 Returning to login screen');
+                setIsSignUp(false);
+                setCurrentStep('credentials');
+              }
+            }]
           );
         }
       } else {
-        const { error } = await signIn(email, password);
+        console.log('🔐 Starting sign in process');
+        const { error, originalError } = await signIn(email, password);
+        
         if (error) {
-          Alert.alert(t('settings.updateFailed'), error.message);
+          console.error('❌ Login failed:', {
+            error: error.message,
+            originalError: originalError ? {
+              name: originalError.name,
+              message: originalError.message,
+              status: (originalError as any)?.status
+            } : null
+          });
+          
+          // Handle specific database grant error
+          if (error.message.includes('database error granting user')) {
+            console.error('🔴 Database grant error - Possible causes:', {
+              user: email,
+              timestamp: new Date().toISOString(),
+              possibleIssues: [
+                'User profile not properly created in user_profiles table',
+                'Row Level Security (RLS) policy issues',
+                'Database trigger failure',
+                'Database connection issue'
+              ]
+            });
+            
+            // More user-friendly message for database grant errors
+            return Alert.alert(
+              'Login Error',
+              'There was an issue accessing your account. Please try again in a moment. If the problem persists, please contact support.'
+            );
+          }
+          
+          // Show user-friendly error message for other errors
+          Alert.alert(t('auth.loginFailed'), error.message);
         } else {
-          // Sign in successful - navigate to main app (Fluent Flo)
-          console.log('✅ SIGN IN SUCCESSFUL - NAVIGATING TO FLUENT FLO');
+          console.log('✅ Login successful, navigating to home');
           router.replace('/');
         }
       }
     } catch (error) {
-      Alert.alert(t('settings.updateFailed'), 'An unexpected error occurred');
+      console.error('🔥 Unexpected error in handleAuth:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      Alert.alert(
+        t('settings.updateFailed'),
+        errorMessage
+      );
     } finally {
       setLoading(false);
     }

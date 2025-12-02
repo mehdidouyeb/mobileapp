@@ -1,9 +1,10 @@
 import 'dotenv/config';
 
-export default ({ config }) => ({
+export default ({ config }: { config: any }) => ({
   expo: {
-    name: 'mobileapp-rn',
-    slug: 'mobileapp-rn',
+    name: 'FluentFlo',
+    slug: 'fluentflo',
+    owner: 'jonjonthefox',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
@@ -11,7 +12,10 @@ export default ({ config }) => ({
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     extra: {
-      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      eas: {
+        projectId: 'f929cbb7-a19a-49e8-9977-01f245fa7323'
+      },
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_API_KEY,
       SUPABASE_URL: process.env.SUPABASE_URL,
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     },
@@ -25,15 +29,15 @@ export default ({ config }) => ({
         backgroundColor: '#ffffff', 
         dark: { backgroundColor: '#000000' } 
       }],
-      // Additional plugins can be added here
     ],
     ios: {
       supportsTablet: true,
+      bundleIdentifier: 'com.jonjonthefox.fluentflo',
       infoPlist: {
         NSMicrophoneUsageDescription: 'This app needs access to the microphone for voice chat.',
         NSSpeechRecognitionUsageDescription: 'This app needs speech recognition to transcribe your voice.',
-      },
-      bundleIdentifier: 'com.anonymous.mobileapprn',
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       adaptiveIcon: {
@@ -44,7 +48,7 @@ export default ({ config }) => ({
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      package: 'com.anonymous.mobileapprn',
+      package: 'com.jonjonthefox.fluentflo',
     },
     web: {
       output: 'static',

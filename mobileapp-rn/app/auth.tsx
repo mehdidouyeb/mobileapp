@@ -8,117 +8,47 @@ import {
   Alert,
   SafeAreaView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { router } from 'expo-router';
-import { LanguageSelection } from '../components/LanguageSelection';
-import { useTranslation } from 'react-i18next';
+import { supabase } from '../lib/supabase';
 
-type AuthStep = 'credentials' | 'languages';
-
-export default function AuthScreen({ navigation }: any) {
+export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [currentStep, setCurrentStep] = useState<AuthStep>('credentials');
-  const [preferredLanguage, setPreferredLanguage] = useState('en');
-  const [targetLanguage, setTargetLanguage] = useState('en');
+  const [error, setError] = useState<string | null>(null);
 
-  const { signIn, signUp, resetPassword } = useAuth();
-  const { t } = useTranslation();
-
-  const handleNext = () => {
-    if (currentStep === 'credentials') {
-      if (!email || !password) {
-        Alert.alert(t('settings.updateFailed'), t('auth.email') + ' and ' + t('auth.password') + ' are required');
-        return;
-      }
-      if (isSignUp) {
-        setCurrentStep('languages');
-      } else {
-        handleAuth();
-      }
-    } else if (currentStep === 'languages') {
-      handleAuth();
-    }
-  };
-
-  const handleBack = () => {
-    setCurrentStep('credentials');
-  };
+  const { signIn, signUp } = useAuth();
 
   const handleAuth = async () => {
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, preferredLanguage, targetLanguage);
-        if (error) {
-          console.error('❌ Sign up error:', error);
-          Alert.alert(t('settings.updateFailed'), error.message);
-        } else {
-          console.log('✅ Account created successfully');
-          Alert.alert(
-            t('auth.accountCreated'),
-            t('auth.accountCreated'),
-            [{ 
-              text: 'OK', 
-              onPress: () => {
-                console.log('👤 Returning to login screen');
-                setIsSignUp(false);
-                setCurrentStep('credentials');
-              }
-            }]
-          );
-        }
+        const { error } = await signUp(email, password);
+        if (error) throw error;
+        Alert.alert('Success', 'Account created! Please sign in.');
+        setIsSignUp(false);
       } else {
-        console.log('🔐 Starting sign in process');
-        const { error, originalError } = await signIn(email, password);
-        
-        if (error) {
-          console.error('❌ Login failed:', {
-            error: error.message,
-            originalError: originalError ? {
-              name: originalError.name,
-              message: originalError.message,
-              status: (originalError as any)?.status
-            } : null
-          });
-          
-          // Handle specific database grant error
-          if (error.message.includes('database error granting user')) {
-            console.error('🔴 Database grant error - Possible causes:', {
-              user: email,
-              timestamp: new Date().toISOString(),
-              possibleIssues: [
-                'User profile not properly created in user_profiles table',
-                'Row Level Security (RLS) policy issues',
-                'Database trigger failure',
-                'Database connection issue'
-              ]
-            });
-            
-            // More user-friendly message for database grant errors
-            return Alert.alert(
-              'Login Error',
-              'There was an issue accessing your account. Please try again in a moment. If the problem persists, please contact support.'
-            );
-          }
-          
-          // Show user-friendly error message for other errors
-          Alert.alert(t('auth.loginFailed'), error.message);
-        } else {
-          console.log('✅ Login successful, navigating to home');
-          router.replace('/');
-        }
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+        // On successful login, the RootLayoutNav will handle the redirect
       }
     } catch (error) {
-      console.error('🔥 Unexpected error in handleAuth:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      Alert.alert(
-        t('settings.updateFailed'),
-        errorMessage
-      );
+      console.error('Auth error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,128 +56,102 @@ export default function AuthScreen({ navigation }: any) {
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert(t('settings.updateFailed'), t('auth.email') + ' is required');
+      Alert.alert('Error', 'Please enter your email address');
       return;
     }
 
     try {
-      const { error } = await resetPassword(email);
-      if (error) {
-        Alert.alert(t('settings.updateFailed'), error.message);
-      } else {
-        Alert.alert(t('auth.resetPassword'));
-      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      Alert.alert('Email Sent', 'Check your email for the password reset link');
     } catch (error) {
-      Alert.alert(t('settings.updateFailed'), 'An unexpected error occurred');
+      console.error('Password reset error:', error);
+      setError('Failed to send password reset email');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>FluentFlow</Text>
-        <Text style={styles.subtitle}>
-          {isSignUp ? (
-            currentStep === 'credentials' ? t('app.createAccount') : t('app.chooseLanguages')
-          ) : t('app.welcomeBack')}
-        </Text>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <Text style={styles.title}>FluentFlow</Text>
+            <Text style={styles.subtitle}>
+              {isSignUp ? 'Create your account' : 'Welcome back!'}
+            </Text>
 
-        {currentStep === 'credentials' ? (
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth.email')}
-              placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth.password')}
-              placeholderTextColor="#9CA3AF"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-
-            <Pressable
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleNext}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {isSignUp ? t('auth.next') : t('auth.signIn')}
-                </Text>
-              )}
-            </Pressable>
-
-            <Pressable
-              style={styles.linkButton}
-              onPress={() => {
-                setIsSignUp(!isSignUp);
-                setCurrentStep('credentials');
-              }}
-            >
-              <Text style={styles.linkText}>
-                {isSignUp
-                  ? t('auth.alreadyHaveAccount')
-                  : t('auth.dontHaveAccount')}
-              </Text>
-            </Pressable>
-
-            {!isSignUp && (
-              <Pressable
-                style={styles.linkButton}
-                onPress={handleResetPassword}
-              >
-                <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
-              </Pressable>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
             )}
-          </View>
-        ) : (
-          <View style={styles.form}>
-            <LanguageSelection
-              title={t('auth.nativeLanguage')}
-              selectedLanguage={preferredLanguage}
-              onSelectLanguage={setPreferredLanguage}
-            />
 
-            <LanguageSelection
-              title={t('auth.targetLanguage')}
-              selectedLanguage={targetLanguage}
-              onSelectLanguage={setTargetLanguage}
-            />
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#9CA3AF"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                textContentType="emailAddress"
+              />
 
-            <View style={styles.buttonRow}>
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password"
+                textContentType="password"
+              />
+
               <Pressable
-                style={[styles.secondaryButton]}
-                onPress={handleBack}
-              >
-                <Text style={styles.secondaryButtonText}>{t('settings.cancel')}</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.button, loading && styles.buttonDisabled, { flex: 1, marginLeft: 12 }]}
-                onPress={handleNext}
-                disabled={loading}
+                style={[styles.button, (loading || !email || !password) && styles.buttonDisabled]}
+                onPress={handleAuth}
+                disabled={loading || !email || !password}
               >
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text style={styles.buttonText}>{t('auth.createAccount')}</Text>
+                  <Text style={styles.buttonText}>
+                    {isSignUp ? 'Sign Up' : 'Sign In'}
+                  </Text>
                 )}
               </Pressable>
+
+              <Pressable
+                style={styles.linkButton}
+                onPress={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                }}
+              >
+                <Text style={styles.linkText}>
+                  {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                </Text>
+              </Pressable>
+
+              {!isSignUp && (
+                <Pressable style={styles.linkButton} onPress={handleResetPassword}>
+                  <Text style={styles.linkText}>Forgot Password?</Text>
+                </Pressable>
+              )}
             </View>
           </View>
-        )}
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -256,6 +160,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0b1020',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
   content: {
     flex: 1,
@@ -273,7 +182,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#9CA3AF',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   form: {
     gap: 16,
@@ -292,7 +201,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -303,28 +211,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   linkButton: {
+    marginTop: 12,
     alignItems: 'center',
-    padding: 8,
   },
   linkText: {
     color: '#60A5FA',
     fontSize: 14,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  secondaryButton: {
-    backgroundColor: '#374151',
-    padding: 16,
+  errorContainer: {
+    backgroundColor: '#FEE2E2',
+    padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
+    marginBottom: 16,
   },
-  secondaryButtonText: {
-    color: '#D1D5DB',
-    fontSize: 16,
-    fontWeight: '600',
+  errorText: {
+    color: '#B91C1C',
+    textAlign: 'center',
   },
 });
